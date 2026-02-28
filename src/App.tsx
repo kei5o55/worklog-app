@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { DraftCommit } from "./components/CommitModal";
+import CommitModal from "./components/CommitModal";
+
 
 type WorkSession = {
   id: string;
-  startedAt: number; // epoch ms
-  endedAt?: number;  // epoch ms
+  projectId: string;   // ← 追加
+  startedAt: number;
+  endedAt?: number;
   note: string;
 };
 
@@ -44,8 +48,14 @@ function saveSessions(sessions: WorkSession[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
 }
 
+
 export default function App() {
   const [sessions, setSessions] = useState<WorkSession[]>(() => loadSessions());
+  const [selectedProject, setSelectedProject] = useState({ id: "p1", name: "NARAKU" }); // 仮
+  const [draft, setDraft] = useState<DraftCommit | null>(null);
+  const [isCommitOpen, setIsCommitOpen] = useState(false);
+
+  const [draftCommit, setDraftCommit] = useState<DraftCommit | null>(null);
 
   // 稼働中セッション（endedAtがない最新）を探す
   const running = useMemo(() => sessions.find((s) => s.endedAt == null), [sessions]);
@@ -82,18 +92,38 @@ export default function App() {
     return (running.endedAt ?? now) - running.startedAt;
   }, [running, now]);
 
-  const start = () => {
-    if (running) return;
-    const s: WorkSession = { id: uid(), startedAt: Date.now(), note: "" };
-    setSessions((prev) => [s, ...prev]);
+  const startWithProject = (projectId: string) => {
+      if (running) return;
+      const s: WorkSession = { id: uid(), projectId, startedAt: Date.now(), note: "" };
+      setSessions((prev) => [s, ...prev]);
   };
+
+  const start = () => startWithProject(selectedProject.id);
+
+  
+  
+  
 
   const stop = () => {
     if (!running) return;
+
     const endedAt = Date.now();
-    setSessions((prev) =>
-      prev.map((s) => (s.id === running.id ? { ...s, endedAt, note } : s))
-    );
+
+    // DraftCommitを作る（仮データ）
+    const draft: DraftCommit = {
+      projectId: selectedProject.id,
+      projectName: selectedProject.name,
+      startedAt: running.startedAt,
+      endedAt,
+      note: running.note ?? "",
+      commitNumber: 1,      // 今は仮でOK
+      todayTotalMs: endedAt - running.startedAt,
+      projectTotalMs: endedAt - running.startedAt,
+      recentNotes: [],
+    };
+
+    setDraftCommit(draft);
+    setIsCommitOpen(true); // ← これがモーダル表示トリガ
   };
 
   const updateRunningNote = (value: string) => {
@@ -112,6 +142,31 @@ export default function App() {
     if (!confirm("全部消す？（戻せない）")) return;
     setSessions([]);
   };
+
+  const saveDraftAsSession = (continueAfter: boolean) => {
+    if (!draft) return;
+
+    // sessionsに確定保存（いまはlocalStorageでOK）
+    setSessions((prev) => [
+      {
+        id: uid(),
+        projectId: draft.projectId,
+        startedAt: draft.startedAt,
+        endedAt: draft.endedAt,
+        note: draft.note,
+      },
+      ...prev,
+    ]);
+
+    setIsCommitOpen(false);
+    setDraft(null);
+
+    if (continueAfter) {
+      // 同じプロジェクトで即スタート（running作り直す）
+      startWithProject(draft.projectId);
+    }
+  };
+
 
   return (
     <main style={{ maxWidth: 720, margin: "0 auto", padding: 24, fontFamily: "system-ui" }}>
@@ -224,6 +279,25 @@ export default function App() {
           </ul>
         )}
       </section>
+      <CommitModal
+        open={isCommitOpen}
+        draft={draftCommit}
+        onChange={setDraftCommit}
+        onCancel={() => {
+          setIsCommitOpen(false);
+          setDraftCommit(null);
+        }}
+        onSave={() => {
+          console.log("save!");
+          setIsCommitOpen(false);
+        }}
+        onSaveAndContinue={() => {
+          console.log("save & continue!");
+          setIsCommitOpen(false);
+        }}
+      />
     </main>
+    
   );
+  
 }
