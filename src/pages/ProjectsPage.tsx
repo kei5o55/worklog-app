@@ -1,20 +1,178 @@
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import type  { NewProjectInput } from "../components/CreateProjectModal";
+import CreateProjectModal from "../components/CreateProjectModal"
+
+export type Project = {
+  id: string;
+  name: string;
+  dueDate?: string; // "YYYY-MM-DD"
+  memo?: string;
+  createdAt: number;
+};
+
+function uid() {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function daysUntil(dueDate: string) {
+  // dueDate は "YYYY-MM-DD"
+  const [y, m, d] = dueDate.split("-").map(Number);
+  const due = new Date(y, m - 1, d, 23, 59, 59, 999).getTime();
+  const now = Date.now();
+  const diffMs = due - now;
+  return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+}
 
 export default function ProjectsPage() {
-  // まずは仮で1つ
-  const p = { id: "p1", title: "NARAKU" };
+  const [projects, setProjects] = useState<Project[]>([
+    {
+      id: "p1",
+      name: "NARAKU",
+      dueDate: "",
+      memo: "仮プロジェクト（後で消してOK）",
+      createdAt: Date.now(),
+    },
+  ]);
+
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  const sorted = useMemo(() => {
+    const copy = [...projects];
+
+    // 納期あり→近い順、納期なし→最後、同条件なら新しい順
+    copy.sort((a, b) => {
+      const ad = a.dueDate?.trim() ? a.dueDate.trim() : "";
+      const bd = b.dueDate?.trim() ? b.dueDate.trim() : "";
+
+      if (ad && bd) return ad.localeCompare(bd);
+      if (ad && !bd) return -1;
+      if (!ad && bd) return 1;
+      return b.createdAt - a.createdAt;
+    });
+
+    return copy;
+  }, [projects]);
+
+  const onCreate = (input: NewProjectInput) => {
+    const name = input.name.trim();
+    if (!name) return;
+
+    const p: Project = {
+      id: uid(),
+      name,
+      dueDate: input.dueDate?.trim() ? input.dueDate.trim() : undefined,
+      memo: input.memo?.trim() ? input.memo.trim() : undefined,
+      createdAt: Date.now(),
+    };
+
+    setProjects((prev) => [p, ...prev]);
+    setIsCreateOpen(false);
+  };
+
+  const onDelete = (id: string) => {
+    const target = projects.find((p) => p.id === id);
+    const label = target ? `「${target.name}」` : "このプロジェクト";
+    if (!confirm(`${label}を削除します。よろしいですか？`)) return;
+
+    setProjects((prev) => prev.filter((p) => p.id !== id));
+  };
 
   return (
-    <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
-      <h1>Projects</h1>
+    <main style={{ maxWidth: 820, margin: "0 auto", padding: 24, fontFamily: "system-ui" }}>
+      <header style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <h1 style={{ margin: 0 }}>Projects</h1>
+        <button
+          onClick={() => setIsCreateOpen(true)}
+          style={{ marginLeft: "auto", padding: "10px 14px", borderRadius: 10 }}
+        >
+          + 新規プロジェクト
+        </button>
+      </header>
 
-      <div style={{ border: "1px solid #ddd", borderRadius: 12, padding: 12 }}>
-        <div style={{ fontSize: 18 }}>{p.title}</div>
-        <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
-          <Link to={`/projects/${p.id}`}>詳細</Link>
-          <Link to={`/projects/${p.id}/timer`}>作業する</Link>
-        </div>
-      </div>
+      <p style={{ color: "#666", marginTop: 8 }}>
+        ※いまは永続化なし（リロードで消えます）
+      </p>
+
+      <section style={{ marginTop: 16 }}>
+        {sorted.length === 0 ? (
+          <div style={{ border: "1px dashed #bbb", borderRadius: 12, padding: 16, color: "#777" }}>
+            まだプロジェクトがありません。「+ 新規プロジェクト」から作成。
+          </div>
+        ) : (
+          <div style={{ display: "grid", gap: 12 }}>
+            {sorted.map((p) => {
+              const due = p.dueDate?.trim() ? p.dueDate.trim() : "";
+              const remain = due ? daysUntil(due) : null;
+
+              return (
+                <article
+                  key={p.id}
+                  style={{
+                    border: "1px solid #ddd",
+                    borderRadius: 14,
+                    padding: 14,
+                    display: "grid",
+                    gap: 10,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+                    <div style={{ fontSize: 18, fontWeight: 700 }}>{p.name}</div>
+
+                    {due ? (
+                      <div style={{ fontSize: 12, color: "#666" }}>
+                        納期: {due}
+                        {remain != null && (
+                          <span style={{ marginLeft: 8 }}>
+                            （あと{remain}日）
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 12, color: "#999" }}>納期なし</div>
+                    )}
+
+                    <button
+                      onClick={() => onDelete(p.id)}
+                      style={{
+                        marginLeft: "auto",
+                        padding: "6px 10px",
+                        borderRadius: 10,
+                      }}
+                      title="削除"
+                    >
+                      削除
+                    </button>
+                  </div>
+
+                  {p.memo ? (
+                    <div style={{ color: "#333", whiteSpace: "pre-wrap" }}>{p.memo}</div>
+                  ) : (
+                    <div style={{ color: "#999" }}>（メモなし）</div>
+                  )}
+
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    <Link to={`/projects/${p.id}`} style={{ padding: "8px 10px" }}>
+                      詳細
+                    </Link>
+                    <Link to={`/projects/${p.id}/timer`} style={{ padding: "8px 10px" }}>
+                      作業する
+                    </Link>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <CreateProjectModal
+        open={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onCreate={onCreate}
+      />
     </main>
   );
 }

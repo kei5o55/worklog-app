@@ -20,6 +20,15 @@ type WorkSession = {
     pausedAt?: number;
 };
 
+type Project = {
+    id: string;
+    name: string;
+};
+
+const PROJECTS: Project[] = [//仮プロジェクト
+    { id: "p1", name: "NARAKU" },
+    { id: "p2", name: "MISORIA" },
+];
 
 
 function pad2(n: number) {
@@ -111,15 +120,27 @@ const addCommit = (commit: Commit) => {
 
 export default function TimerPage() {
     const [sessions, setSessions] = useState<WorkSession[]>(() => loadSessions());
+    const { projectId } = useParams();
 
     // いまは仮。将来は projectId からプロジェクト名を引く
-    const [selectedProject] = useState({ id: "p1", name: "NARAKU" });
+    const selectedProject = useMemo(() => {
+        if (!projectId) return null;
+        return PROJECTS.find((p) => p.id === projectId) ?? null;
+    }, [projectId]);
+
+    if (!selectedProject) {
+        return (
+            <main style={{ padding: 24 }}>
+            <h2>Project not found</h2>
+            </main>
+        );
+    }
 
     const [draftCommit, setDraftCommit] = useState<DraftCommit | null>(null);
     const [isCommitOpen, setIsCommitOpen] = useState(false);
 
     const navigate = useNavigate();
-    const { projectId } = useParams();
+    
 
     // 表示用の現在時刻（runningのときだけ更新）
     const [now, setNow] = useState<number>(() => Date.now());
@@ -194,11 +215,11 @@ export default function TimerPage() {
             prev.map((s) =>
                 s.id === paused.id
                     ? {
-                          ...s,
-                          status: "running",
-                          startedAt: nowTs - pausedElapsed,
-                          pausedAt: undefined,
-                      }
+                        ...s,
+                        status: "running",
+                        startedAt: nowTs - pausedElapsed,
+                        pausedAt: undefined,
+                    }
                     : s
             )
         );
@@ -218,7 +239,7 @@ export default function TimerPage() {
     };
 
     const start = () => startWithProject(selectedProject.id);
-
+    
     const stop = () => {
         if (!activeSession) return;
 
@@ -315,6 +336,7 @@ export default function TimerPage() {
     };
 
     return (
+        
         <main style={{ maxWidth: 720, margin: "0 auto", padding: 24, fontFamily: "system-ui" }}>
             <h1 style={{ fontSize: 22, marginBottom: 12 }}>Worklog Timer</h1>
 
