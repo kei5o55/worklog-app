@@ -99,7 +99,7 @@ export default function ProjectDetailPage() {
             まだコミットがありません。「作業する」からタイマーを回して Stop → 保存してね。
           </div>
         ) : (
-        <ul style={{ listStyle: "none", padding: 0, display: "grid", gap: 10 }}>
+        <ul style={{ listStyle: "none", padding: 0, display: "grid", gap: 10,cursor: "pointer",transition: "background 0.15s" }}>
             {commits.map((c) => (
                 <li key={c.id}>
                 <Link

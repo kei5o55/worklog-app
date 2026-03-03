@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { DraftCommit } from "../components/CommitModal";
 import CommitModal from "../components/CommitModal";
 import { useNavigate, useParams } from "react-router-dom";
-import { loadSessions, saveSessions, addCommit, loadProjects } from "../logic/storage";
+import { loadSessions, saveSessions, addCommit, loadProjects ,loadCommits} from "../logic/storage";
 import type { WorkSession } from "../logic/types";
 
 type Project = {
@@ -78,6 +78,19 @@ export default function TimerPage() {
         () => sessions.filter((s) => s.projectId === projectId),
         [sessions, projectId]
     );
+    function isSameLocalDay(t1: number, t2: number) {
+        const a = new Date(t1);
+        const b = new Date(t2);
+        return (
+            a.getFullYear() === b.getFullYear() &&
+            a.getMonth() === b.getMonth() &&
+            a.getDate() === b.getDate()
+        );
+    }
+
+    function sumMs(list: { durationMs: number }[]) {
+        return list.reduce((acc, x) => acc + x.durationMs, 0);
+    }
 
     const [draftCommit, setDraftCommit] = useState<DraftCommit | null>(null);
     const [isCommitOpen, setIsCommitOpen] = useState(false);
@@ -189,8 +202,27 @@ export default function TimerPage() {
         const endedAt = Date.now();
         const effectiveEnd =
             activeSession.status === "paused"
-                ? activeSession.pausedAt ?? endedAt
-                : endedAt;
+            ? activeSession.pausedAt ?? endedAt
+            : endedAt;
+
+        const durationMs = effectiveEnd - activeSession.startedAt;
+
+        const allCommits = loadCommits();
+        const projectCommits = allCommits
+            .filter((c) => c.projectId === selectedProject.id)
+            .sort((a, b) => b.endedAt - a.endedAt);
+
+        const commitNumber = projectCommits.length + 1;
+
+        const projectTotalMs = sumMs(projectCommits) + durationMs;
+
+        const todayTotalMs =
+            sumMs(projectCommits.filter((c) => isSameLocalDay(c.endedAt, effectiveEnd))) + durationMs;
+
+        const recentNotes = projectCommits
+            .map((c) => (c.note ?? "").trim())
+            .filter((n) => n.length > 0)
+            .slice(0, 5);
 
         const draft: DraftCommit = {
             projectId: selectedProject.id,
@@ -198,10 +230,10 @@ export default function TimerPage() {
             startedAt: activeSession.startedAt,
             endedAt: effectiveEnd,
             note: activeSession.note ?? "",
-            commitNumber: 1, // TODO: project単位で数える
-            todayTotalMs: effectiveEnd - activeSession.startedAt,
-            projectTotalMs: effectiveEnd - activeSession.startedAt,
-            recentNotes: [],
+            commitNumber,
+            todayTotalMs,
+            projectTotalMs,
+            recentNotes,
         };
 
         setDraftCommit(draft);
