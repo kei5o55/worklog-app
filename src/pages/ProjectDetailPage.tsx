@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { loadProjects, loadCommits } from "../logic/storage";
 import type { Project, Commit } from "../logic/types";
 
+
 function pad2(n: number) {
   return String(n).padStart(2, "0");
 }
@@ -169,6 +170,7 @@ export default function ProjectDetailPage() {
                 画像がまだありません（ここに進捗画像が並びます）
             </div>
         </section>
+    
     </main>
     );
 }
