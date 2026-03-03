@@ -101,20 +101,25 @@ export default function TimerPage() {
     // 表示用の現在時刻（runningのときだけ更新）
     const [now, setNow] = useState<number>(() => Date.now());
 
-    // 未終了セッション（1つだけ運用想定）
     const activeSession = useMemo(
-        () => sessions.find((s) => s.endedAt == null) ?? null,
-        [sessions]
+    () => sessions.find((s) => s.projectId === projectId && s.endedAt == null) ?? null,
+    [sessions, projectId]
     );
 
     const running = useMemo(
-        () => sessions.find((s) => s.endedAt == null && s.status === "running") ?? null,
-        [sessions]
+    () =>
+        sessions.find(
+        (s) => s.projectId === projectId && s.endedAt == null && s.status === "running"
+        ) ?? null,
+    [sessions, projectId]
     );
 
     const paused = useMemo(
-        () => sessions.find((s) => s.endedAt == null && s.status === "paused") ?? null,
-        [sessions]
+    () =>
+        sessions.find(
+        (s) => s.projectId === projectId && s.endedAt == null && s.status === "paused"
+        ) ?? null,
+    [sessions, projectId]
     );
 
     const [note, setNote] = useState<string>(activeSession?.note ?? "");
@@ -392,65 +397,68 @@ export default function TimerPage() {
                 </div>
             </section>
 
-            {/* Sessions一覧（未終了も含む。今は確認用） */}
+            {/* Sessions一覧（プロジェクト単位） */ }
             <section>
-                <h2 style={{ fontSize: 16, marginBottom: 8 }}>Sessions</h2>
-                {sessions.length === 0 ? (
-                    <p style={{ color: "#666" }}>まだセッションがありません</p>
-                ) : (
-                    <ul style={{ listStyle: "none", padding: 0, display: "grid", gap: 10 }}>
-                        {sessions.map((s) => {
-                            const end =
-                                s.endedAt ??
-                                (s.status === "paused" ? s.pausedAt ?? s.startedAt : Date.now());
-                            const ms = end - s.startedAt;
+            <h2 style={{ fontSize: 16, marginBottom: 8 }}>Sessions</h2>
 
-                            const label = s.endedAt
-                                ? "DONE"
-                                : s.status === "running"
-                                ? "RUNNING"
-                                : "PAUSED";
+            {projectSessions.length === 0 ? (
+                <p style={{ color: "#666" }}>まだセッションがありません</p>
+            ) : (
+                <ul style={{ listStyle: "none", padding: 0, display: "grid", gap: 10 }}>
+                {projectSessions.map((s) => {
+                    const end =
+                    s.endedAt ??
+                    (s.status === "paused" ? s.pausedAt ?? s.startedAt : Date.now());
+                    const ms = end - s.startedAt;
 
-                            return (
-                                <li
-                                    key={s.id}
-                                    style={{
-                                        border: "1px solid #ddd",
-                                        borderRadius: 12,
-                                        padding: 12,
-                                        opacity: s.endedAt ? 0.95 : 1,
-                                    }}
-                                >
-                                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                        <strong style={{ fontVariantNumeric: "tabular-nums" }}>{formatMs(ms)}</strong>
+                    const label = s.endedAt
+                    ? "DONE"
+                    : s.status === "running"
+                    ? "RUNNING"
+                    : "PAUSED";
 
-                                        <span
-                                            style={{
-                                                fontSize: 12,
-                                                padding: "2px 8px",
-                                                borderRadius: 999,
-                                                border: "1px solid #999",
-                                            }}
-                                        >
-                                            {label}
-                                        </span>
-                                    </div>
+                    return (
+                    <li
+                        key={s.id}
+                        style={{
+                        border: "1px solid #ddd",
+                        borderRadius: 12,
+                        padding: 12,
+                        opacity: s.endedAt ? 0.95 : 1,
+                        }}
+                    >
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <strong style={{ fontVariantNumeric: "tabular-nums" }}>
+                            {formatMs(ms)}
+                        </strong>
 
-                                    <div style={{ marginTop: 6, fontSize: 12, color: "#666" }}>
-                                        {new Date(s.startedAt).toLocaleString()}
-                                        {s.endedAt ? ` → ${new Date(s.endedAt).toLocaleString()}` : ""}
-                                    </div>
+                        <span
+                            style={{
+                            fontSize: 12,
+                            padding: "2px 8px",
+                            borderRadius: 999,
+                            border: "1px solid #999",
+                            }}
+                        >
+                            {label}
+                        </span>
+                        </div>
 
-                                    {s.note?.trim() ? (
-                                        <p style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>{s.note}</p>
-                                    ) : (
-                                        <p style={{ marginTop: 8, color: "#999" }}>（メモなし）</p>
-                                    )}
-                                </li>
-                            );
-                        })}
-                    </ul>
-                )}
+                        <div style={{ marginTop: 6, fontSize: 12, color: "#666" }}>
+                        {new Date(s.startedAt).toLocaleString()}
+                        {s.endedAt ? ` → ${new Date(s.endedAt).toLocaleString()}` : ""}
+                        </div>
+
+                        {s.note?.trim() ? (
+                        <p style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>{s.note}</p>
+                        ) : (
+                        <p style={{ marginTop: 8, color: "#999" }}>（メモなし）</p>
+                        )}
+                    </li>
+                    );
+                })}
+                </ul>
+            )}
             </section>
 
             <CommitModal
