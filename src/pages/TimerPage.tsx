@@ -101,20 +101,25 @@ export default function TimerPage() {
     // 表示用の現在時刻（runningのときだけ更新）
     const [now, setNow] = useState<number>(() => Date.now());
 
-    // 未終了セッション（1つだけ運用想定）
     const activeSession = useMemo(
-        () => sessions.find((s) => s.endedAt == null) ?? null,
-        [sessions]
+    () => sessions.find((s) => s.projectId === projectId && s.endedAt == null) ?? null,
+    [sessions, projectId]
     );
 
     const running = useMemo(
-        () => sessions.find((s) => s.endedAt == null && s.status === "running") ?? null,
-        [sessions]
+    () =>
+        sessions.find(
+        (s) => s.projectId === projectId && s.endedAt == null && s.status === "running"
+        ) ?? null,
+    [sessions, projectId]
     );
 
     const paused = useMemo(
-        () => sessions.find((s) => s.endedAt == null && s.status === "paused") ?? null,
-        [sessions]
+    () =>
+        sessions.find(
+        (s) => s.projectId === projectId && s.endedAt == null && s.status === "paused"
+        ) ?? null,
+    [sessions, projectId]
     );
 
     const [note, setNote] = useState<string>(activeSession?.note ?? "");
