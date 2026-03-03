@@ -1,73 +1,91 @@
-# React + TypeScript + Vite
+## Worklog Timer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+創作活動向けの作業記録アプリ。
+プロジェクト単位でタイマー計測・コミット記録を行う。
 
-Currently, two official plugins are available:
+## 🚀 技術スタック
+- React
+- TypeScript
+- Vite
+- React Router
+状態管理は現状 React Context のみ。
+永続化は一部 localStorage（sessions / commits）。
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🧩 機能一覧（現時点）
 
-## React Compiler
+**1. プロジェクト管理**
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- 新規プロジェクト作成（モーダル）
+  - 名前（必須）
+  - 納期（任意）
+  - メモ（任意）
+- 一覧表示
+- 削除（confirmあり）
+- Contextでアプリ全体共有
+- ※永続化なし（リロードで消える）
+  
+**2. タイマー機能**
+- Start / Pause / Resume / Stop
+- 画面離脱時自動Pause
+- タブ非表示時自動Pause
+- 経過時間表示（HH:MM:SS）
+3. セッション管理
+- セッション一覧表示
+- 状態表示（RUNNING / PAUSED / DONE）
+- localStorage に保存
+  
+**4. コミット機能**
+- Stop時にモーダル表示
+- コミット確定
+- projectId単位で保存
+- 保存後 projects一覧へ遷移
 
-## Expanding the ESLint configuration
+## 🗂 ディレクトリ構成（簡易）
+src/
+ ├─ components/
+ │   ├─ CommitModal.tsx
+ │   └─ CreateProjectModal.tsx
+ │
+ ├─ contexts/
+ │   └─ ProjectsContext.tsx
+ │
+ ├─ pages/
+ │   ├─ ProjectsPage.tsx
+ │   ├─ ProjectDetailPage.tsx
+ │   └─ TimerPage.tsx
+ │
+ ├─ App.tsx
+ └─ main.tsx
+ 
+## 🧠 状態設計方針
+URLを正本とする
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+/projects/:projectId/timer
+→ projectId を useParams で取得
+→ Context の projects から検索
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+Projects は Context管理
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+アプリ全体で共有
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+永続化は未実装
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Sessions / Commits は localStorage管理
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+今後 DB 化想定
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 🔮 今後の予定
+
+- プロジェクト永続化（localStorage → DB）
+- プロジェクト詳細ページ強化
+- コミット回数の project単位集計
+- 作業ログ画像添付
+- GIF生成（タイムラプス）
+- SNS共有機能
+
+## 🏗 開発方針
+
+- MVPで小さく作る
+- UI → データ → 永続化の順で拡張
+- 責務分離（Context / Page / Modal）
+- URLを状態の正本にする
