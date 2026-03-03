@@ -1,3 +1,4 @@
+//App.tsx
 import { Routes, Route, Navigate } from "react-router-dom";
 import ProjectsPage from "./pages/ProjectsPage";
 import ProjectDetailPage from "./pages/ProjectDetailPage";

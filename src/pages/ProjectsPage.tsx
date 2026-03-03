@@ -1,15 +1,17 @@
-import { useMemo, useState } from "react";
+//src/pages/ProjectsPage.tsx
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import type  { NewProjectInput } from "../components/CreateProjectModal";
-import CreateProjectModal from "../components/CreateProjectModal"
+import type { NewProjectInput } from "../components/CreateProjectModal";
+import CreateProjectModal from "../components/CreateProjectModal";
+import { loadProjects, saveProjects, clearProjects, type Project } from "../logic/storage";
 
-export type Project = {
+/*export type Project = {
   id: string;
   name: string;
   dueDate?: string; // "YYYY-MM-DD"
   memo?: string;
   createdAt: number;
-};
+};*/
 
 function uid() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -17,8 +19,13 @@ function uid() {
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+function normalizeProject(p: Project): Project {
+  const due = p.dueDate?.trim() ? p.dueDate.trim() : undefined;
+  const memo = p.memo?.trim() ? p.memo.trim() : undefined;
+  return { ...p, dueDate: due, memo };
+}
+
 function daysUntil(dueDate: string) {
-  // dueDate は "YYYY-MM-DD"
   const [y, m, d] = dueDate.split("-").map(Number);
   const due = new Date(y, m - 1, d, 23, 59, 59, 999).getTime();
   const now = Date.now();
@@ -27,18 +34,30 @@ function daysUntil(dueDate: string) {
 }
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([
-    {
-      id: "p1",
-      name: "NARAKU",
-      dueDate: "",
-      memo: "仮プロジェクト（後で消してOK）",
-      createdAt: Date.now(),
-    },
-  ]);
+  const [projects, setProjects] = useState<Project[]>(() => {
+    const loaded = loadProjects();
+    // 初回だけ空ならサンプル入れる（要らなければここ消してOK）
+    if (loaded.length > 0) return loaded;
+    return [
+      {
+        id: "p1",
+        name: "NARAKU",
+        // dueDateはundefinedで統一（空文字は使わない）
+        memo: "仮プロジェクト（後で消してOK）",
+        createdAt: Date.now(),
+      },
+    ];
+  });
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+  // 変更のたびに永続化
+  useEffect(() => {
+    saveProjects(projects);
+  }, [projects]);
+
+    useState(() => loadProjects());
+    
   const sorted = useMemo(() => {
     const copy = [...projects];
 
@@ -60,19 +79,20 @@ export default function ProjectsPage() {
     const name = input.name.trim();
     if (!name) return;
 
-    const p: Project = {
+    const p: Project = normalizeProject({
       id: uid(),
       name,
-      dueDate: input.dueDate?.trim() ? input.dueDate.trim() : undefined,
-      memo: input.memo?.trim() ? input.memo.trim() : undefined,
+      dueDate: input.dueDate,
+      memo: input.memo,
       createdAt: Date.now(),
-    };
+    });
 
     setProjects((prev) => [p, ...prev]);
     setIsCreateOpen(false);
   };
 
   const onDelete = (id: string) => {
+    // 表示ラベルだけ先に確定
     const target = projects.find((p) => p.id === id);
     const label = target ? `「${target.name}」` : "このプロジェクト";
     if (!confirm(`${label}を削除します。よろしいですか？`)) return;
@@ -93,7 +113,7 @@ export default function ProjectsPage() {
       </header>
 
       <p style={{ color: "#666", marginTop: 8 }}>
-        ※いまは永続化なし（リロードで消えます）
+        ※ localStorage に保存されます（リロードしても残る）
       </p>
 
       <section style={{ marginTop: 16 }}>
@@ -124,11 +144,7 @@ export default function ProjectsPage() {
                     {due ? (
                       <div style={{ fontSize: 12, color: "#666" }}>
                         納期: {due}
-                        {remain != null && (
-                          <span style={{ marginLeft: 8 }}>
-                            （あと{remain}日）
-                          </span>
-                        )}
+                        {remain != null && <span style={{ marginLeft: 8 }}>（あと{remain}日）</span>}
                       </div>
                     ) : (
                       <div style={{ fontSize: 12, color: "#999" }}>納期なし</div>
@@ -168,11 +184,7 @@ export default function ProjectsPage() {
         )}
       </section>
 
-      <CreateProjectModal
-        open={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-        onCreate={onCreate}
-      />
+      <CreateProjectModal open={isCreateOpen} onClose={() => setIsCreateOpen(false)} onCreate={onCreate} />
     </main>
   );
 }

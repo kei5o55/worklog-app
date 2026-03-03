@@ -1,3 +1,5 @@
+//src/components/CreateProjectModal.tsx
+// ここはプロジェクト作成用のモーダル。ProjectsPageから呼び出す
 import { useEffect, useMemo, useState } from "react";
 
 export type NewProjectInput = {

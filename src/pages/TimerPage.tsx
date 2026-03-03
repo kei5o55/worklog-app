@@ -1,12 +1,10 @@
+//src/pages/TimerPage.tsx
+// ここはタイマーのページ。作業時間の計測やコミットの保存などを行う
 import { useEffect, useMemo, useRef, useState } from "react";
-
 import type { DraftCommit } from "../components/CommitModal";
-
 import CommitModal from "../components/CommitModal";
-
 import { useNavigate, useParams } from "react-router-dom";
-
-
+import { loadSessions, saveSessions, addCommit, loadProjects } from "../logic/storage";
 
 type WorkSession = {
     id: string;
@@ -52,33 +50,7 @@ function uid() {
         ? crypto.randomUUID()
         : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
-
-
-
 const STORAGE_KEY = "worklog:sessions:v1";
-
-
-
-function loadSessions(): WorkSession[] {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return [];
-        const parsed = JSON.parse(raw) as WorkSession[];
-        if (!Array.isArray(parsed)) return [];
-        return parsed;
-    } catch {
-        return [];
-    }
-}
-
-
-
-function saveSessions(sessions: WorkSession[]) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
-}
-
-
-
 const COMMITS_KEY = "worklog:commits:v1";
 
 
@@ -91,31 +63,6 @@ type Commit = {
     durationMs: number;
     note: string;
 };
-
-
-
-const loadCommits = (): Commit[] => {
-    try {
-        const raw = localStorage.getItem(COMMITS_KEY);
-        return raw ? (JSON.parse(raw) as Commit[]) : [];
-    } catch {
-        return [];
-    }
-};
-
-
-
-const saveCommits = (commits: Commit[]) => {
-    localStorage.setItem(COMMITS_KEY, JSON.stringify(commits));
-};
-
-
-
-const addCommit = (commit: Commit) => {
-    const prev = loadCommits();
-    saveCommits([commit, ...prev]);
-};
-
 
 
 export default function TimerPage() {

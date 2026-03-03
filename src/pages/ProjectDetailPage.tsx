@@ -1,4 +1,7 @@
+//src/pages/ProjectDetailPage.tsx
+// ここはプロジェクトの詳細ページ。作業時間の履歴やギャラリーなどを表示する
 import { Link, useParams } from "react-router-dom";
+import { loadProjects, loadCommits } from "../logic/storage";
 
 export default function ProjectDetailPage() {
     const { projectId } = useParams();
