@@ -38,12 +38,14 @@ function alignToSaturday(ts: number) {
   return addDays(ts, 6 - dow);
 }
 
-function levelFromMinutes(min: number) {
-  if (min <= 0) return 0;
-  if (min < 30) return 1;
-  if (min < 60) return 2;
-  if (min < 120) return 3;
-  return 4;
+function levelFrom(commitsCount: number, minutes: number) {
+  if (commitsCount <= 0) return 0; // 1コミットで点灯したいのでここが重要
+
+  const hours = minutes / 60;
+  if (hours >= 5) return 4;
+  if (hours >= 3) return 3;
+  if (hours >= 2) return 2;
+  return 1;
 }
 
 function levelColor(level: number) {
@@ -83,15 +85,21 @@ export default function ContributionHeatmap({ commits, title }: Props) {
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
 
-  // 日別の合計（分）
-  const minutesByDay = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const c of commits) {
-      const k = dayKey(c.endedAt);
-      map.set(k, (map.get(k) ?? 0) + Math.floor(c.durationMs / 60000));
-    }
-    return map;
-  }, [commits]);
+    // 日別の合計時間とコミット数
+    const statsByDay = useMemo(() => {
+        const map = new Map<string, { minutes: number; commits: number }>();
+
+        for (const c of commits) {
+            const k = dayKey(c.endedAt);
+            const prev = map.get(k) ?? { minutes: 0, commits: 0 };
+            map.set(k, {
+            minutes: prev.minutes + Math.floor(c.durationMs / 60000),
+            commits: prev.commits + 1,
+            });
+        }
+
+        return map;
+    }, [commits]);
 
   const range = useMemo(() => {
     if (mode === "last365") {
@@ -114,22 +122,24 @@ export default function ContributionHeatmap({ commits, title }: Props) {
   }, [range.start, range.end]);
 
   // セル（7日×週数）
-  const columns = useMemo(() => {
-    const cells: { ts: number; key: string; minutes: number; level: number; inRange: boolean }[] = [];
+    const columns = useMemo(() => {
+        const cells: { ts: number; key: string; minutes: number; level: number; inRange: boolean }[] = [];
 
-    for (let ts = aligned.start; ts <= aligned.end; ts = addDays(ts, 1)) {
-      const k = dayKey(ts);
-      const minutes = minutesByDay.get(k) ?? 0;
-      const level = levelFromMinutes(minutes);
-      const inRange = ts >= range.start && ts <= range.end;
-      cells.push({ ts, key: k, minutes, level, inRange });
-    }
+        for (let ts = aligned.start; ts <= aligned.end; ts = addDays(ts, 1)) {
+            const k = dayKey(ts);
+            const stat = statsByDay.get(k) ?? { minutes: 0, commits: 0 };
+            const minutes = stat.minutes;
+            const commitsCount = stat.commits;
+            const level = levelFrom(commitsCount, minutes);
+            const inRange = ts >= range.start && ts <= range.end;
+            cells.push({ ts, key: k, minutes, level, inRange });
+        }
 
-    // 7日ずつ区切って列にする（縦7）
-    const cols: typeof cells[] = [];
-    for (let i = 0; i < cells.length; i += 7) cols.push(cells.slice(i, i + 7));
-    return cols;
-  }, [aligned.start, aligned.end, minutesByDay, range.start, range.end]);
+        // 7日ずつ区切って列にする（縦7）
+        const cols: typeof cells[] = [];
+            for (let i = 0; i < cells.length; i += 7) cols.push(cells.slice(i, i + 7));
+            return cols;
+    }, [aligned.start, aligned.end, statsByDay, range.start, range.end]);
 
     const monthLabels = useMemo(() => {
         return columns.map((col) => {
