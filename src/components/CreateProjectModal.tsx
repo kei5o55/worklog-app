@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 
 export type NewProjectInput = {
   name: string;
-  dueDate: string; // "" or "YYYY-MM-DD"
+  dueDate: string;
   memo: string;
+  targetHours: string; // "" or "10" みたいな文字列で受ける
 };
 
 type Props = {
@@ -18,6 +19,12 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
   const [name, setName] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [memo, setMemo] = useState("");
+  const [targetHours, setTargetHours] = useState("");
+  function toHalfWidth(str: string) {
+    return str.replace(/[０-９]/g, (s) =>
+      String.fromCharCode(s.charCodeAt(0) - 0xfee0)
+    );
+  }
 
   const canCreate = useMemo(() => name.trim().length > 0, [name]);
 
@@ -33,7 +40,7 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
 
   const submit = () => {
     if (!canCreate) return;
-    onCreate({ name, dueDate, memo });
+    onCreate({ name, dueDate, memo, targetHours });
   };
 
   return (
@@ -102,6 +109,32 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
             <div style={{ fontSize: 12, color: "#888", marginTop: 6 }}>
               入稿締切やイベント日など、ひとまず1つだけ登録
             </div>
+          </div>
+          
+          <div>
+            <label style={{ display: "block", fontSize: 12, color: "#555", marginBottom: 6 }}>
+              目標時間（任意 / 時間）
+            </label>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={targetHours}
+              onChange={(e) => {
+                const raw = toHalfWidth(e.target.value);
+
+                if (raw === "") {
+                  setTargetHours("");
+                  return;
+                }
+
+                const n = Number(raw);
+                if (Number.isFinite(n) && n > 0) {
+                  setTargetHours(n);
+                }
+              }}
+              style={{ width: 160, padding: 10, borderRadius: 10, border: "1px solid #ddd" }}
+            />
           </div>
 
           <div>

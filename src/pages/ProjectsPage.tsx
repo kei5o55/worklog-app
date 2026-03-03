@@ -6,13 +6,7 @@ import CreateProjectModal from "../components/CreateProjectModal";
 import { loadProjects, saveProjects, clearProjects,} from "../logic/storage";
 import type { Project } from "../logic/types";
 
-/*export type Project = {
-  id: string;
-  name: string;
-  dueDate?: string; // "YYYY-MM-DD"
-  memo?: string;
-  createdAt: number;
-};*/
+
 
 function uid() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -35,7 +29,7 @@ function daysUntil(dueDate: string) {
 }
 
 export default function ProjectsPage() {
-    
+
     const [projects, setProjects] = useState<Project[]>(() => {
         const loaded = loadProjects();
         if (loaded.length > 0) return loaded;
@@ -53,7 +47,8 @@ export default function ProjectsPage() {
         saveProjects(projects);
     }, [projects]);
 
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    
 
   // 変更のたびに永続化
   useEffect(() => {
@@ -82,14 +77,17 @@ export default function ProjectsPage() {
   const onCreate = (input: NewProjectInput) => {
     const name = input.name.trim();
     if (!name) return;
+    const th = Number(input.targetHours);
+    const targetHours =input.targetHours.trim() && Number.isFinite(th) && th > 0 ? th : undefined;
 
-    const p: Project = normalizeProject({
-      id: uid(),
-      name,
-      dueDate: input.dueDate,
-      memo: input.memo,
-      createdAt: Date.now(),
-    });
+    const p: Project = {
+        id: uid(),
+        name,
+        dueDate: input.dueDate?.trim() ? input.dueDate.trim() : undefined,
+        memo: input.memo?.trim() ? input.memo.trim() : undefined,
+        targetHours,
+        createdAt: Date.now(),
+    };
 
     setProjects((prev) => [p, ...prev]);
     setIsCreateOpen(false);

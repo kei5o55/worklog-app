@@ -38,11 +38,17 @@ export function getCommit(projectId: string, commitId: string): Commit | null {
 
 // ===== Projects =====
 export function normalizeProject(p: Project): Project {
-  return {
-    ...p,
-    dueDate: normalizeString(p.dueDate),
-    memo: normalizeString(p.memo),
-  };
+    const th =
+        typeof p.targetHours === "number" && Number.isFinite(p.targetHours) && p.targetHours > 0
+            ? p.targetHours
+            : undefined;
+
+    return {
+        ...p,
+        dueDate: normalizeString(p.dueDate),
+        memo: normalizeString(p.memo),
+        targetHours: th,
+    };
 }
 
 export function loadProjects(): Project[] {
@@ -57,6 +63,7 @@ export function loadProjects(): Project[] {
         dueDate: typeof x.dueDate === "string" ? x.dueDate : undefined,
         memo: typeof x.memo === "string" ? x.memo : undefined,
         createdAt: typeof x.createdAt === "number" ? x.createdAt : Date.now(),
+        targetHours: typeof x.targetHours === "number" ? x.targetHours : undefined,
       })
     );
 }

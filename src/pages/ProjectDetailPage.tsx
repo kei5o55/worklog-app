@@ -21,6 +21,7 @@ export default function ProjectDetailPage() {
 
   const [projects, setProjects] = useState<Project[]>(() => loadProjects());
   const [commitsAll, setCommitsAll] = useState<Commit[]>(() => loadCommits());
+    
 
   const refresh = () => {
     setProjects(loadProjects());
@@ -47,6 +48,7 @@ export default function ProjectDetailPage() {
   }, [commitsAll, projectId]);
 
   const totalMs = useMemo(() => commits.reduce((sum, c) => sum + c.durationMs, 0), [commits]);
+    
 
   if (!projectId) {
     return (
@@ -66,6 +68,9 @@ export default function ProjectDetailPage() {
       </main>
     );
   }
+    const targetMs = project.targetHours ? project.targetHours * 60 * 60 * 1000 : null;
+    const ratio = targetMs ? Math.min(1, totalMs / targetMs) : null;
+    const percent = ratio != null ? Math.floor(ratio * 100) : null;
 
   return (
     <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
@@ -131,15 +136,39 @@ export default function ProjectDetailPage() {
             ))}
         </ul>
         )}
-      </section>
+        </section>
+    
+    <section style={{ marginTop: 16 }}>
+        {project.targetHours ? (
+            <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 12, marginBottom: 4, color: "#555" }}>
+                進捗（目標 {project.targetHours}h）：{percent}%
+                <span style={{ marginLeft: 8, color: "#777" }}>
+                    ({formatMs(totalMs)} / {formatMs(project.targetHours * 60 * 60 * 1000)})
+                </span>
+                </div>
+
+                <div style={{ height: 12, background: "#eee", borderRadius: 999, overflow: "hidden" }}>
+                <div
+                    style={{
+                    height: "100%",
+                    width: `${percent}%`,
+                    background: "#4f8cff",
+                    transition: "width 0.25s",
+                    }}
+                />
+                </div>
+            </div>
+        ) : null}
+    </section>
 
       {/* 下：ギャラリー（仮） */}
-      <section style={{ marginTop: 20 }}>
-        <h2 style={{ fontSize: 16 }}>Gallery（仮）</h2>
-        <div style={{ border: "1px dashed #bbb", borderRadius: 12, padding: 16, color: "#777" }}>
-          画像がまだありません（ここに進捗画像が並びます）
-        </div>
-      </section>
+        <section style={{ marginTop: 20 }}>
+            <h2 style={{ fontSize: 16 }}>Gallery（仮）</h2>
+            <div style={{ border: "1px dashed #bbb", borderRadius: 12, padding: 16, color: "#777" }}>
+                画像がまだありません（ここに進捗画像が並びます）
+            </div>
+        </section>
     </main>
-  );
+    );
 }
