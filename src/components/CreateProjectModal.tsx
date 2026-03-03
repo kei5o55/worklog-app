@@ -19,7 +19,7 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
   const [name, setName] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [memo, setMemo] = useState("");
-  const [targetHours, setTargetHours] = useState("");
+  const [targetHours, setTargetHours] = useState<string | number>("");
   function toHalfWidth(str: string) {
     return str.replace(/[０-９]/g, (s) =>
       String.fromCharCode(s.charCodeAt(0) - 0xfee0)
@@ -34,13 +34,14 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
     setName("");
     setDueDate("");
     setMemo("");
+    setTargetHours("");
   }, [open]);
 
   if (!open) return null;
 
   const submit = () => {
     if (!canCreate) return;
-    onCreate({ name, dueDate, memo, targetHours });
+    onCreate({ name, dueDate, memo, targetHours: String(targetHours) });
   };
 
   return (
