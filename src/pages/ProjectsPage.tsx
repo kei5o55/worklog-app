@@ -50,6 +50,7 @@ export default function ProjectsPage() {
     }, [projects]);
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
     
 
     // 変更のたびに永続化

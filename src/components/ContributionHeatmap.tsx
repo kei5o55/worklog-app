@@ -80,6 +80,8 @@ export default function ContributionHeatmap({ commits, title }: Props) {
 
   const [mode, setMode] = useState<Mode>("last365");
   const [year, setYear] = useState<number>(years[0] ?? new Date().getFullYear());
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
 
   // 日別の合計（分）
   const minutesByDay = useMemo(() => {
@@ -129,6 +131,17 @@ export default function ContributionHeatmap({ commits, title }: Props) {
     return cols;
   }, [aligned.start, aligned.end, minutesByDay, range.start, range.end]);
 
+    const monthLabels = useMemo(() => {
+        return columns.map((col) => {
+            const first = col[0]; // その週の最初の日（日曜）
+            const d = new Date(first.ts);
+            return {
+            month: d.getMonth(),
+            label: d.toLocaleString("default", { month: "short" }), // Jan, Feb...
+            };
+        });
+    }, [columns]);
+
   return (
     <section>
       {title ? <h3 style={{ fontSize: 14, margin: "8px 0" }}>{title}</h3> : null}
@@ -169,6 +182,19 @@ export default function ContributionHeatmap({ commits, title }: Props) {
 
         <div style={{ marginLeft: "auto", fontSize: 12, color: "#666" }}>{range.label}</div>
       </div>
+      {/* Month labels */}
+        <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
+            {monthLabels.map((m, i) => {
+                const prev = monthLabels[i - 1];
+                const show = i === 0 || prev.month !== m.month;
+
+                return (
+                <div key={i} style={{ width: 12, fontSize: 10, color: "#666" }}>
+                    {show ? m.label : ""}
+                </div>
+                );
+            })}
+        </div>
 
       {/* Grid */}
       <div style={{ overflowX: "auto", paddingBottom: 6 }}>
@@ -179,13 +205,16 @@ export default function ContributionHeatmap({ commits, title }: Props) {
                 <div
                   key={c.key + String(c.ts)}
                   title={`${c.key} / ${formatMinutes(c.minutes)}`}
+                  onClick={() => setSelectedDate(c.key)}
                   style={{
+                    cursor: "pointer",
                     width: 12,
                     height: 12,
                     borderRadius: 3,
                     background: c.inRange ? levelColor(c.level) : "#ffffff",
                     outline: "1px solid rgba(0,0,0,0.06)",
                     opacity: c.inRange ? 1 : 0.25,
+                    
                   }}
                 />
               ))}
@@ -193,6 +222,24 @@ export default function ContributionHeatmap({ commits, title }: Props) {
           ))}
         </div>
       </div>
+      {selectedDate && (() => {
+        const filtered = commits.filter((c) => dayKey(c.endedAt) === selectedDate);
+        return (
+            <div style={{ marginTop: 12 }}>
+            <h4>{selectedDate} のコミット</h4>
+            {filtered.length === 0 ? (
+                <div style={{ color: "#999", fontSize: 14 }}>コミットはありません</div>
+            ) : (
+                filtered.map((c) => (
+                <div key={c.id} style={{ padding: 6, borderBottom: "1px solid #eee" }}>
+                    {new Date(c.endedAt).toLocaleTimeString()} / {Math.floor(c.durationMs / 60000)}min
+                    <div style={{ fontSize: 12, color: "#666" }}>{c.note}</div>
+                </div>
+                ))
+            )}
+            </div>
+        );
+        })()}
 
       {/* Legend */}
       <div style={{ marginTop: 8, display: "flex", gap: 6, alignItems: "center", fontSize: 12, color: "#666" }}>
