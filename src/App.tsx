@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import ProjectsPage from "./pages/ProjectsPage";
 import ProjectDetailPage from "./pages/ProjectDetailPage";
 import TimerPage from "./pages/TimerPage";
+import CommitDetailPage from "./pages/CommitDetailPage";
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
       <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
       <Route path="/projects/:projectId/timer" element={<TimerPage />} />
       <Route path="*" element={<div style={{ padding: 24 }}>Not Found</div>} />
+      <Route path="/projects/:projectId/commits/:commitId" element={<CommitDetailPage />} />
     </Routes>
   );
 }

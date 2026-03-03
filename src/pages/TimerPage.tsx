@@ -5,18 +5,7 @@ import type { DraftCommit } from "../components/CommitModal";
 import CommitModal from "../components/CommitModal";
 import { useNavigate, useParams } from "react-router-dom";
 import { loadSessions, saveSessions, addCommit, loadProjects } from "../logic/storage";
-
-type WorkSession = {
-    id: string;
-    projectId: string;
-    startedAt: number;
-    endedAt?: number;
-    note: string;
-
-    // 追加：一時停止対応
-    status: "running" | "paused";
-    pausedAt?: number;
-};
+import type { WorkSession } from "../logic/types";
 
 type Project = {
     id: string;
@@ -67,13 +56,15 @@ type Commit = {
 
 export default function TimerPage() {
     const [sessions, setSessions] = useState<WorkSession[]>(() => loadSessions());
+    const projects = useMemo(() => loadProjects(), []);
     const { projectId } = useParams();
+    
 
     // いまは仮。将来は projectId からプロジェクト名を引く
     const selectedProject = useMemo(() => {
         if (!projectId) return null;
-        return PROJECTS.find((p) => p.id === projectId) ?? null;
-    }, [projectId]);
+        return projects.find((p) => p.id === projectId) ?? null;
+    }, [projectId, projects]);
 
     if (!selectedProject) {
         return (
@@ -82,6 +73,11 @@ export default function TimerPage() {
             </main>
         );
     }
+
+    const projectSessions = useMemo(
+        () => sessions.filter((s) => s.projectId === projectId),
+        [sessions, projectId]
+    );
 
     const [draftCommit, setDraftCommit] = useState<DraftCommit | null>(null);
     const [isCommitOpen, setIsCommitOpen] = useState(false);

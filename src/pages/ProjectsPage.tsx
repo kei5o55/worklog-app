@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { NewProjectInput } from "../components/CreateProjectModal";
 import CreateProjectModal from "../components/CreateProjectModal";
-import { loadProjects, saveProjects, clearProjects, type Project } from "../logic/storage";
+import { loadProjects, saveProjects, clearProjects,} from "../logic/storage";
+import type { Project } from "../logic/types";
 
 /*export type Project = {
   id: string;
@@ -34,20 +35,23 @@ function daysUntil(dueDate: string) {
 }
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>(() => {
-    const loaded = loadProjects();
-    // 初回だけ空ならサンプル入れる（要らなければここ消してOK）
-    if (loaded.length > 0) return loaded;
-    return [
-      {
-        id: "p1",
-        name: "NARAKU",
-        // dueDateはundefinedで統一（空文字は使わない）
-        memo: "仮プロジェクト（後で消してOK）",
-        createdAt: Date.now(),
-      },
-    ];
-  });
+    
+    const [projects, setProjects] = useState<Project[]>(() => {
+        const loaded = loadProjects();
+        if (loaded.length > 0) return loaded;
+        return [
+            {
+            id: "p1",
+            name: "NARAKU",
+            memo: "仮プロジェクト（後で消してOK）",
+            createdAt: Date.now(),
+            },
+        ];
+        });
+
+        useEffect(() => {
+        saveProjects(projects);
+    }, [projects]);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 

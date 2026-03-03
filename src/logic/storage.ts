@@ -1,39 +1,14 @@
 // src/logic/storage.ts
 
+import type { Project, WorkSession, Commit} from "./types";
+
+
 // ===== Keys =====
 export const STORAGE_KEYS = {
   projects: "myapp.projects.v1",
   sessions: "worklog:sessions:v1",
   commits: "worklog:commits:v1",
 } as const;
-
-// ===== Types =====
-export type Project = {
-  id: string;
-  name: string;
-  dueDate?: string; // "YYYY-MM-DD"
-  memo?: string;
-  createdAt: number;
-};
-
-export type WorkSession = {
-  id: string;
-  projectId: string;
-  startedAt: number;
-  endedAt?: number;
-  note: string;
-  status: "running" | "paused";
-  pausedAt?: number;
-};
-
-export type Commit = {
-  id: string;
-  projectId: string;
-  startedAt: number;
-  endedAt: number;
-  durationMs: number;
-  note: string;
-};
 
 // ===== Helpers =====
 function safeJsonParse<T>(raw: string | null): T | null {
@@ -49,6 +24,16 @@ function normalizeString(s: unknown): string | undefined {
   if (typeof s !== "string") return undefined;
   const t = s.trim();
   return t ? t : undefined;
+}
+// 既に loadCommits がある前提
+export function getCommitById(commitId: string): Commit | null {
+    const commits = loadCommits();
+    return commits.find((c) => c.id === commitId) ?? null;
+}
+
+export function getCommit(projectId: string, commitId: string): Commit | null {
+    const commits = loadCommits();
+    return commits.find((c) => c.id === commitId && c.projectId === projectId) ?? null;
 }
 
 // ===== Projects =====
