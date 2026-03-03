@@ -281,20 +281,6 @@ export default function TimerPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // タブ非表示になったら自動pause（スマホのバックグラウンド対策）
-    useEffect(() => {
-        const onVis = () => {
-            if (document.visibilityState !== "visible") {
-                const r = runningRef.current;
-                if (!r) return;
-                pauseById(r.id);
-            }
-        };
-        document.addEventListener("visibilitychange", onVis);
-        return () => document.removeEventListener("visibilitychange", onVis);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
     // --- 保存（コミット確定） ---
     const finalizeAndClose = () => {
         // モーダル閉じるだけ（キャンセル）

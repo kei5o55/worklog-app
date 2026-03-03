@@ -5,6 +5,8 @@ import type { NewProjectInput } from "../components/CreateProjectModal";
 import CreateProjectModal from "../components/CreateProjectModal";
 import { loadProjects, saveProjects, clearProjects,} from "../logic/storage";
 import type { Project } from "../logic/types";
+import ContributionHeatmap from "../components/ContributionHeatmap";
+import { loadCommits } from "../logic/storage";
 
 
 
@@ -48,14 +50,22 @@ export default function ProjectsPage() {
     }, [projects]);
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
     
 
-  // 変更のたびに永続化
-  useEffect(() => {
-    saveProjects(projects);
-  }, [projects]);
+    // 変更のたびに永続化
+    useEffect(() => {
+        saveProjects(projects);
+    }, [projects]);
 
     useState(() => loadProjects());
+
+    const [commitsAll, setCommitsAll] = useState(() => loadCommits());
+    useEffect(() => {
+        const onFocus = () => setCommitsAll(loadCommits());
+        window.addEventListener("focus", onFocus);
+        return () => window.removeEventListener("focus", onFocus);
+    }, []);
     
   const sorted = useMemo(() => {
     const copy = [...projects];
@@ -187,6 +197,10 @@ export default function ProjectsPage() {
       </section>
 
       <CreateProjectModal open={isCreateOpen} onClose={() => setIsCreateOpen(false)} onCreate={onCreate} />
+    
+    <section style={{ marginTop: 12 }}>
+        <ContributionHeatmap commits={commitsAll} title="All Activity" />
+    </section>
     </main>
   );
 }
