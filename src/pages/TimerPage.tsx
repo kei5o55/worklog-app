@@ -364,13 +364,15 @@ export default function TimerPage() {
                 </label>
                 <textarea
                     value={note}
+                    
                     onChange={(e) => updateActiveNote(e.target.value)}
                     placeholder={activeSession ? "今やってる作業を書いておく" : "Startしたら入力できる"}
                     disabled={!activeSession}
                     rows={3}
-                    style={{ width: "100%", padding: 10, borderRadius: 10, border: "1px solid #ddd" }}
+                    style={{ resize: "vertical", width: "50%", minHeight: "60px", padding: 10, borderRadius: 10, border: "1px solid #ddd" }} 
+                    
                 />
-
+                {/* 横にtodoとか置きたいからテキストエリアは５０％で*/}
                 <div style={{ marginTop: 8, fontSize: 12, color: "#666" }}>
                     {activeSession ? (
                         <>
