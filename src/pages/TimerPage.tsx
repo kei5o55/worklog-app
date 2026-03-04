@@ -304,7 +304,7 @@ export default function TimerPage() {
     return (
         
         <main style={{ maxWidth: 720, margin: "0 auto", padding: 24, fontFamily: "system-ui" }}>
-            <h1 style={{ fontSize: 22, marginBottom: 12 }}>Worklog Timer</h1>
+            <h1 style={{ fontSize: 22, marginBottom: 12 }}>{selectedProject?.name ?? "Worklog Timer"}</h1>
 
             <section
                 style={{

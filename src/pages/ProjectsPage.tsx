@@ -115,7 +115,7 @@ export default function ProjectsPage() {
   return (
     <main style={{ maxWidth: 820, margin: "0 auto", padding: 24, fontFamily: "system-ui" }}>
       <header style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <h1 style={{ margin: 0 }}>Projects</h1>
+        <h1 style={{ margin: 0 }}>Worklog</h1>
         <button
           onClick={() => setIsCreateOpen(true)}
           style={{ marginLeft: "auto", padding: "10px 14px", borderRadius: 10 }}
