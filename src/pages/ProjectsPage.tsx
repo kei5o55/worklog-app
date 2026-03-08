@@ -7,6 +7,7 @@ import { loadProjects, saveProjects, clearProjects,} from "../logic/storage";
 import type { Project } from "../logic/types";
 import ContributionHeatmap from "../components/ContributionHeatmap";
 import { loadCommits } from "../logic/storage";
+import ScheduleCalendar from "../components/ScheduleCalendar";
 
 
 
@@ -200,6 +201,9 @@ export default function ProjectsPage() {
     
     <section style={{ marginTop: 12 }}>
         <ContributionHeatmap commits={commitsAll} title="All Activity" />
+    </section>
+    <section>
+        <ScheduleCalendar year={2024} month={1} projects={projects} memos={[]} commits={commitsAll} onSelectDate={() => {}} />
     </section>
     </main>
   );
