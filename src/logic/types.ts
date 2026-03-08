@@ -13,6 +13,8 @@ export type Project = {
 
 export type WorkSessionStatus = "running" | "paused";
 
+export type TimerMode="normal" | "pomodoro";
+
 export type WorkSession = {
     id: string;
     projectId: ProjectId;
@@ -20,6 +22,10 @@ export type WorkSession = {
     endedAt?: number;
     note: string;
     status: WorkSessionStatus;
+    timerMode?: TimerMode;
+    pomodoloCount?: number; 
+    pomodoroWorkMinutes?: number;
+    pomodoroBreakMinutes?: number;
     pausedAt?: number;
 };
 
