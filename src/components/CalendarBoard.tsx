@@ -14,6 +14,7 @@ export default function CalendarPage() {
     const [current, setCurrent] = useState(() => new Date());
     const [selectedCell, setSelectedCell] = useState<CalendarCell | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
+    
 
     const year = current.getFullYear();
     const month = current.getMonth();
@@ -48,6 +49,10 @@ export default function CalendarPage() {
         }
     };
 
+    const moveMonth = (diff: number) => {
+        setCurrent((prev) => new Date(prev.getFullYear(), prev.getMonth() + diff, 1));
+    };
+
     return (
         <div style={{ padding: 24 }}>
         <ScheduleCalendar
@@ -57,6 +62,7 @@ export default function CalendarPage() {
             memos={memos}
             commits={commits}
             onSelectDate={setSelectedCell}
+            moveMonth={moveMonth}
         />
 
         <CalendarDayDetail

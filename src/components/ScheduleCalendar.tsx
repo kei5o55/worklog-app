@@ -3,23 +3,25 @@ import { buildCalendarCells } from "../logic/calendar";
 import type { CalendarCell, CalendarMemo, Commit, Project } from "../logic/types";
 
 type Props = {
-  year: number;
-  month: number;
-  projects: Project[];
-  memos: CalendarMemo[];
-  commits: Commit[];
-  onSelectDate?: (cell: CalendarCell) => void;
+    year: number;
+    month: number;
+    projects: Project[];
+    memos: CalendarMemo[];
+    commits: Commit[];
+    onSelectDate?: (cell: CalendarCell) => void;
+    moveMonth: (diff: number) => void;
 };
 
 const WEEK_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
 
 export default function ScheduleCalendar({
-  year,
-  month,
-  projects,
-  memos,
-  commits,
-  onSelectDate,
+    year,
+    month,
+    projects,
+    memos,
+    commits,
+    onSelectDate,
+    moveMonth,
 }: Props) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
@@ -29,9 +31,19 @@ export default function ScheduleCalendar({
 
   return (
     <div style={styles.wrapper}>
-      <h2 style={styles.title}>
-        {year}年 {month + 1}月
-      </h2>
+        <div style={styles.header}>
+            <button type="button" onClick={() => moveMonth(-1)}>
+                ←
+            </button>
+
+            <h2 style={styles.monthLabel}>
+                {year}年 {month + 1}月
+            </h2>
+
+            <button type="button" onClick={() => moveMonth(1)}>
+                →
+            </button>
+        </div>
 
       <div style={styles.weekHeader}>
         {WEEK_LABELS.map((label) => (
