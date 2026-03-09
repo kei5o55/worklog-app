@@ -27,7 +27,7 @@ export default function CalendarDayDetail({ cell, onAddMemo }: Props) {
         <div style={styles.header}>
             <h3 style={styles.title}>{cell.date} の予定</h3>
             <button type="button" onClick={() => onAddMemo?.(cell.date)}>
-            メモ追加
+                メモ追加
             </button>
         </div>
 

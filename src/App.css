@@ -40,3 +40,50 @@
 .read-the-docs {
   color: #888;
 }
+
+/* ナビゲーションボタンの基本設定 */
+.nav-button {
+  all: unset; /* デフォルトのボタン装飾をリセット */
+  display: inline-flex;
+  alignItems: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 20px;
+  line-height: 1;
+  color: #5f6368;
+  background-color: transparent;
+  text-align: center;
+  user-select: none; /* テキスト選択を防ぐ */
+}
+
+/* ホバー時のスタイル */
+.nav-button:hover {
+  background-color: #f1f3f4;
+  color: #202124;
+}
+
+/* クリックした瞬間のフィードバック */
+.nav-button:active {
+  background-color: #e8eaed;
+  transform: scale(0.95);
+}
+
+/* コンテナ（並べる用） */
+.calendar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+}
+
+.current-month {
+  font-weight: 700;
+  font-size: 1.1rem;
+  min-width: 140px;
+  text-align: center;
+  color: #3c4043;
+}
