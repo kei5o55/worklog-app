@@ -67,6 +67,7 @@ export default function CalendarPage() {
 
         <CalendarDayDetail
             cell={selectedCell}
+            projects={projects}
             onAddMemo={handleAddMemo}
         />
         </div>

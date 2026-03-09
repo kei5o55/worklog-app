@@ -102,7 +102,7 @@ export default function ScheduleCalendar({
                     ))}
 
                     {cell.commits.length > 0 && (
-                    <div style={styles.commitInfo}>作業 {cell.commits.length}件</div>
+                    <div style={styles.commitInfo}>コミット {cell.commits.length}件</div>
                     )}
                 </div>
                 </button>
