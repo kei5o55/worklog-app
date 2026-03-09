@@ -4,7 +4,7 @@ import type { CalendarCell, CalendarMemo, Commit, Project } from "../logic/types
 
 type Props = {
   year: number;
-  month: number; // 0-based
+  month: number;
   projects: Project[];
   memos: CalendarMemo[];
   commits: Commit[];
@@ -63,7 +63,11 @@ export default function ScheduleCalendar({
               <div style={styles.dayNumber}>{day}</div>
 
               <div style={styles.items}>
-                {cell.projects.slice(0, 2).map((project) => (
+                {cell.dueProjects.length > 0 && (
+                  <div style={styles.dueText}>納期 {cell.dueProjects.length}件</div>
+                )}
+
+                {cell.projects.slice(0, 1).map((project) => (
                   <div
                     key={project.id}
                     style={{
@@ -76,16 +80,14 @@ export default function ScheduleCalendar({
                   </div>
                 ))}
 
-                {cell.memos.slice(0, 2).map((memo) => (
+                {cell.memos.slice(0, 1).map((memo) => (
                   <div key={memo.id} style={styles.memoText} title={memo.text}>
                     • {memo.text}
                   </div>
                 ))}
 
                 {cell.commits.length > 0 && (
-                  <div style={styles.commitInfo}>
-                    作業 {cell.commits.length}件
-                  </div>
+                  <div style={styles.commitInfo}>作業 {cell.commits.length}件</div>
                 )}
               </div>
             </button>
@@ -134,6 +136,11 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     flexDirection: "column",
     gap: 4,
+  },
+  dueText: {
+    fontSize: 12,
+    color: "#c0392b",
+    fontWeight: 700,
   },
   projectBadge: {
     color: "#fff",
