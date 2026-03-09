@@ -50,6 +50,7 @@ export function buildCalendarCells(
         cells.push({
         date,
         isCurrentMonth: current.getMonth() === month,
+        isCurrendDay: date === formatDate(new Date()),
         projects: dayProjects,
         dueProjects,
         memos: dayMemos,

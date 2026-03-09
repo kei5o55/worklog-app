@@ -72,6 +72,7 @@ export default function ScheduleCalendar({
                 style={{
                     ...styles.cell,
                     opacity: cell.isCurrentMonth ? 1 : 0.45,
+                    background: cell.isCurrendDay ? "#6cc9ff" : "#fff",
                     border: isSelected ? "2px solid #222" : "1px solid #ddd",
                 }}
                 >

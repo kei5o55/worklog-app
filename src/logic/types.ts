@@ -3,12 +3,12 @@
 export type ProjectId = string;
 
 export type Project = {
-  id: ProjectId;
-  name: string;
-  dueDate?: string; // "YYYY-MM-DD"
-  memo?: string;
-  createdAt: number;
-  targetHours?: number;
+    id: ProjectId;
+    name: string;
+    dueDate?: string; // "YYYY-MM-DD"
+    memo?: string;
+    createdAt: number;
+    targetHours?: number;
 
   // カレンダー表示用
   startDate?: string; // "YYYY-MM-DD"
@@ -55,6 +55,7 @@ export type CalendarMemo = {
 export type CalendarCell = {
     date: string; // "YYYY-MM-DD"
     isCurrentMonth: boolean;
+    isCurrendDay: boolean;
     projects: Project[];      // その日に進行中のプロジェクト
     dueProjects: Project[];   // 納期がその日のプロジェクト
     memos: CalendarMemo[];
