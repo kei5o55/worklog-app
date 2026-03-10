@@ -24,13 +24,13 @@ export default function ScheduleCalendar({
     onSelectDate,
     moveMonth,
 }: Props) {
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-  const cells = useMemo(() => {
-    return buildCalendarCells(year, month, projects, memos, commits);
-  }, [year, month, projects, memos, commits]);
+        const cells = useMemo(() => {
+        return buildCalendarCells(year, month, projects, memos, commits);
+    }, [year, month, projects, memos, commits]);
 
-  return (
+    return (
     <div style={styles.wrapper}>
         <div className="calendar-nav-container">
             {/* 左ボタン */}
