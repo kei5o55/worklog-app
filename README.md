@@ -82,23 +82,6 @@
 - projectId単位で保存
 - 保存後 projects一覧へ遷移
 
-## ディレクトリ構成（簡易）
-src/
- ├─ components/
- │   ├─ CommitModal.tsx
- │   └─ CreateProjectModal.tsx
- │
- ├─ contexts/
- │   └─ ProjectsContext.tsx
- │
- ├─ pages/
- │   ├─ ProjectsPage.tsx
- │   ├─ ProjectDetailPage.tsx
- │   └─ TimerPage.tsx
- │
- ├─ App.tsx
- └─ main.tsx
- 
 ## 状態設計方針
 URLを正本とする
 
