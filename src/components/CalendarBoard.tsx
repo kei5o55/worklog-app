@@ -51,9 +51,20 @@ export default function CalendarPage() {
     };
 
     const handleDeleteMemo = (memoId: string) => {
-        window.alert(`メモ ${memoId} を削除します（実装はまだ）`);
+        // 1. ストレージから削除
         deleteCalendarMemo(memoId);
-    }
+
+        // 2. カレンダー全体のデータをリロード（念のため）
+        setRefreshKey((prev) => prev + 1);
+
+        // 3. 【追加】現在表示中の詳細（selectedCell）からも、削除したメモを「除外」する
+        if (selectedCell) {
+            setSelectedCell({
+                ...selectedCell,
+                memos: selectedCell.memos.filter((m) => m.id !== memoId) // 指定したID以外を残す
+            });
+        }
+    };
         
 
     const moveMonth = (diff: number) => {
