@@ -9,9 +9,13 @@ import {
     loadProjects,
     deleteCalendarMemo,
 } from "../logic/storage";
-import type { CalendarCell } from "../logic/types";
+import type { CalendarCell,Project } from "../logic/types";
 
-export default function CalendarPage() {
+type CalendarPageProps = {
+  projectsFromParent?: Project[]; 
+};
+
+export default function CalendarPage({ projectsFromParent }: CalendarPageProps) {
     const [current, setCurrent] = useState(() => new Date());
     const [selectedCell, setSelectedCell] = useState<CalendarCell | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
@@ -20,7 +24,10 @@ export default function CalendarPage() {
     const year = current.getFullYear();
     const month = current.getMonth();
 
-    const projects = useMemo(() => loadProjects(), [refreshKey]);
+    // 親から projects が届いている場合はそれを使い、なければ自分でロードする
+    const projects = useMemo(() => {
+        return projectsFromParent ?? loadProjects();
+    }, [projectsFromParent, refreshKey]); // projectsFromParent が変われば自動で再計算される
     const memos = useMemo(() => loadCalendarMemos(), [refreshKey]);
     const commits = useMemo(() => loadCommits(), [refreshKey]);
 

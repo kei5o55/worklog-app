@@ -8,7 +8,8 @@ import type { Project } from "../logic/types";
 import ContributionHeatmap from "../components/ContributionHeatmap";
 import { loadCommits } from "../logic/storage";
 import ScheduleCalendar from "../components/ScheduleCalendar";
-import CalendarPage from "./CalendarPage";
+import CalendarPage from "./CalendarPage";//　一旦ProjectsPageから直接CalendarPageを呼び出す形にしてみる（再レンダリングの挙動を見たいので）
+import CalendarBoard from "../components/CalendarBoard";
 
 
 
@@ -53,7 +54,8 @@ export default function ProjectsPage() {
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
-    
+    const [newproject, setNewProject] = useState<Project | null>(null);
+    const [commitsAll, setCommitsAll] = useState(() => loadCommits());
 
     // 変更のたびに永続化
     useEffect(() => {
@@ -62,7 +64,7 @@ export default function ProjectsPage() {
 
     useState(() => loadProjects());
 
-    const [commitsAll, setCommitsAll] = useState(() => loadCommits());
+    
     useEffect(() => {
         const onFocus = () => setCommitsAll(loadCommits());
         window.addEventListener("focus", onFocus);
@@ -204,7 +206,7 @@ export default function ProjectsPage() {
         <ContributionHeatmap commits={commitsAll} title="All Activity" />
     </section>
     <section>
-        <CalendarPage  />
+        <CalendarBoard projectsFromParent={projects} />
     </section>
     </main>
   );
