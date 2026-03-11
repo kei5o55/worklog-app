@@ -4,6 +4,7 @@ type Props = {
     cell: CalendarCell | null;
     projects: Project[];
     onAddMemo?: (date: string) => void;
+    onDeleteMemo?: (memoId: string) => void;
 };
 
 function groupCommitsByProject(cell: CalendarCell, projects: Project[]) {
@@ -37,7 +38,7 @@ function groupCommitsByProject(cell: CalendarCell, projects: Project[]) {
     }));
 }
 
-export default function CalendarDayDetail({ cell, projects, onAddMemo }: Props) {
+export default function CalendarDayDetail({ cell, projects, onAddMemo, onDeleteMemo }: Props) {
     if (!cell) {
         return (
             <section style={styles.wrapper}>
@@ -101,7 +102,13 @@ export default function CalendarDayDetail({ cell, projects, onAddMemo }: Props) 
                         ) : (
                             <ul style={styles.list}>
                                 {cell.memos.map((memo) => (
-                                    <li key={memo.id}>{memo.text}</li>
+                                    <li key={memo.id}>
+                                        {memo.text}
+                                        <button type="button" onClick={() => onDeleteMemo?.(memo.id)}>
+                                            削除
+                                        </button>
+                                    </li>
+                                    
                                 ))}
                             </ul>
                         )}

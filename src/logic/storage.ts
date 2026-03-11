@@ -125,6 +125,7 @@ export function saveCalendarMemos(memos: CalendarMemo[]) {
   );
 }
 
+
 export function addCalendarMemo(memo: CalendarMemo) {
   const prev = loadCalendarMemos();
   saveCalendarMemos([memo, ...prev]);
@@ -134,15 +135,15 @@ export function updateCalendarMemo(updated: CalendarMemo) {
   const prev = loadCalendarMemos();
   saveCalendarMemos(prev.map((m) => (m.id === updated.id ? normalizeCalendarMemo(updated) : m)));
 }
-
-export function deleteCalendarMemo(memoId: string) {
+export function clearCalendarMemos() {
+  localStorage.removeItem(STORAGE_KEYS.calendarMemos);
+}
+export function deleteCalendarMemo(memoId: string) {//ここを変える
   const prev = loadCalendarMemos();
   saveCalendarMemos(prev.filter((m) => m.id !== memoId));
 }
 
-export function clearCalendarMemos() {
-  localStorage.removeItem(STORAGE_KEYS.calendarMemos);
-}
+
 
 
 // ===== Sessions =====

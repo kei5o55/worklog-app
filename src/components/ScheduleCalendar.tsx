@@ -100,6 +100,7 @@ export default function ScheduleCalendar({
                     <div key={memo.id} style={styles.memoText} title={memo.text}>
                         • {memo.text}
                     </div>
+                    
                     ))}
 
                     {cell.commits.length > 0 && (

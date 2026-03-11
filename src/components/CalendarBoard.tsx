@@ -7,6 +7,7 @@ import {
     loadCalendarMemos,
     loadCommits,
     loadProjects,
+    deleteCalendarMemo,
 } from "../logic/storage";
 import type { CalendarCell } from "../logic/types";
 
@@ -49,6 +50,12 @@ export default function CalendarPage() {
         }
     };
 
+    const handleDeleteMemo = (memoId: string) => {
+        window.alert(`メモ ${memoId} を削除します（実装はまだ）`);
+        deleteCalendarMemo(memoId);
+    }
+        
+
     const moveMonth = (diff: number) => {
         setCurrent((prev) => new Date(prev.getFullYear(), prev.getMonth() + diff, 1));
     };
@@ -69,6 +76,7 @@ export default function CalendarPage() {
             cell={selectedCell}
             projects={projects}
             onAddMemo={handleAddMemo}
+            onDeleteMemo={handleDeleteMemo}
         />
         </div>
     );
