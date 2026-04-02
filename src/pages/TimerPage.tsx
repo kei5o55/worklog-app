@@ -42,18 +42,6 @@ function uid() {
 const STORAGE_KEY = "worklog:sessions:v1";
 const COMMITS_KEY = "worklog:commits:v1";
 
-
-
-type Commit = {
-    id: string;
-    projectId: string;
-    startedAt: number;
-    endedAt: number;
-    durationMs: number;
-    note: string;
-};
-
-
 export default function TimerPage() {
     const [sessions, setSessions] = useState<WorkSession[]>(() => loadSessions());
     const projects = useMemo(() => loadProjects(), []);
@@ -158,8 +146,15 @@ export default function TimerPage() {
     const pause = () => {
         if (!running) return;
         const pausedAt = Date.now();
+
+        setNow(pausedAt);
+
         setSessions((prev) =>
-            prev.map((s) => (s.id === running.id ? { ...s, status: "paused", pausedAt } : s))
+            prev.map((s) =>
+                s.id === running.id
+                    ? { ...s, status: "paused", pausedAt }
+                    : s
+            )
         );
     };
 
@@ -169,6 +164,8 @@ export default function TimerPage() {
         const pausedAt = paused.pausedAt ?? Date.now();
         const pausedElapsed = pausedAt - paused.startedAt;
         const nowTs = Date.now();
+
+        setNow(nowTs);
 
         // startedAt を "now - すでに経過した分" にずらすことで、
         // 再開後も elapsed が連続する
