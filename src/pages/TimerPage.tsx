@@ -7,22 +7,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import { loadSessions, saveSessions, addCommit, loadProjects ,loadCommits} from "../logic/storage";
 import type { TimerMode, WorkSession } from "../logic/types";
 
-type Project = {
-    id: string;
-    name: string;
-};
-
-const PROJECTS: Project[] = [//仮プロジェクト
-    { id: "p1", name: "NARAKU" },
-    { id: "p2", name: "MISORIA" },
-];
-
-
 function pad2(n: number) {
     return String(n).padStart(2, "0");
 }
-
-
 
 function formatMs(ms: number) {
     const totalSec = Math.max(0, Math.floor(ms / 1000));
@@ -32,8 +19,6 @@ function formatMs(ms: number) {
     return `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
 }
 
-
-
 function uid() {
     return typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
@@ -42,9 +27,7 @@ function uid() {
 
 export default function TimerPage() {
     const [sessions, setSessions] = useState<WorkSession[]>(() => loadSessions());
-    const [timerMode, setTimerMode] = useState<"normal" | "pomodoro-work" | "pomodoro-break">("normal");
     const [pomodoroEnabled, setPomodoroEnabled] = useState(false);
-    const [cycleCount, setCycleCount] = useState(0);
     const [phase, setPhase] = useState<TimerMode>("idle");
     const [phaseStartedAt, setPhaseStartedAt] = useState<number | null>(null);
     const [completedPomodoros, setCompletedPomodoros] = useState(0);
@@ -52,7 +35,6 @@ export default function TimerPage() {
     const projects = useMemo(() => loadProjects(), []);
     const { projectId } = useParams();
 
-    
     
 
     // いまは仮。将来は projectId からプロジェクト名を引く
@@ -169,48 +151,27 @@ export default function TimerPage() {
         if (!activeSession) return;
         if (activeSession.status !== "running") return;
         if (phase === "idle") return;
-
         if (currentPhaseRemainingMs > 0) return;
 
+        const nowTs = Date.now();
+        setNow(nowTs);
+
         if (phase === "work") {
-            // いまの作業セッションを止めてコミットする代わりに、
-            // ここでは「自動で区切る」簡易版にする
-            const endedAt = Date.now();
-
-            addCommit({
-            id: uid(),
-            projectId: selectedProject.id,
-            startedAt: activeSession.startedAt,
-            endedAt,
-            durationMs: endedAt - activeSession.startedAt,
-            note: activeSession.note ?? "",
-            });
-
-            setSessions((prev) =>
-            prev.map((s) =>
-                s.id === activeSession.id
-                ? { ...s, endedAt, status: "paused", pausedAt: undefined }
-                : s
-            )
-            );
-
             setCompletedPomodoros((v) => v + 1);
             setPhase("break");
-            setPhaseStartedAt(Date.now());
+            setPhaseStartedAt(nowTs);
             return;
         }
 
         if (phase === "break") {
             setPhase("work");
-            setPhaseStartedAt(Date.now());
-            startWithProject(selectedProject.id);
+            setPhaseStartedAt(nowTs);
         }
-        }, [
+    }, [
         pomodoroEnabled,
         activeSession,
         phase,
         currentPhaseRemainingMs,
-        selectedProject.id,
     ]);
 
     // --- 一時停止/再開 ---
@@ -273,12 +234,20 @@ export default function TimerPage() {
     };
 
     const start = () => {
+        const nowTs = Date.now();
+        setNow(nowTs);
+
         if (pomodoroEnabled) {
-            const nowTs = Date.now();
-            setNow(nowTs);
             setPhase("work");
             setPhaseStartedAt(nowTs);
+            setCompletedPomodoros(0);
+            setPhasePausedAt(null);
+        } else {
+            setPhase("idle");
+            setPhaseStartedAt(null);
+            setPhasePausedAt(null);
         }
+
         startWithProject(selectedProject.id);
     };
     
@@ -287,6 +256,7 @@ export default function TimerPage() {
 
         setPhase("idle");
         setPhaseStartedAt(null);
+        setPhasePausedAt(null);
 
         const endedAt = Date.now();
         const effectiveEnd =
