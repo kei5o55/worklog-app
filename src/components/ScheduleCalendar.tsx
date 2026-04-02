@@ -26,7 +26,7 @@ export default function ScheduleCalendar({
 }: Props) {
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-        const cells = useMemo(() => {
+    const cells = useMemo(() => {
         return buildCalendarCells(year, month, projects, memos, commits);
     }, [year, month, projects, memos, commits]);
 

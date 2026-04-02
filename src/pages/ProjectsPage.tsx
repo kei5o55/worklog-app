@@ -202,12 +202,14 @@ export default function ProjectsPage() {
 
       <CreateProjectModal open={isCreateOpen} onClose={() => setIsCreateOpen(false)} onCreate={onCreate} />
     
-    <section style={{ marginTop: 12 }}>
-        <ContributionHeatmap commits={commitsAll} title="All Activity" />
-    </section>
     <section>
         <CalendarBoard projectsFromParent={projects} />
     </section>
+    
+    <section style={{ marginTop: 12 }}>
+        <ContributionHeatmap commits={commitsAll} title="All Activity" />
+    </section>
+    
     </main>
   );
 }
