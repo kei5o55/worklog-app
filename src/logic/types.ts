@@ -9,6 +9,7 @@ export type Project = {
     memo?: string;
     createdAt: number;
     targetHours?: number;
+    pomodoroWorkMinutes?: number;
 
   // カレンダー表示用
   startDate?: string; // "YYYY-MM-DD"

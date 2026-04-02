@@ -7,6 +7,8 @@ export type NewProjectInput = {
   dueDate: string;
   memo: string;
   targetHours: string; // "" or "10" みたいな文字列で受ける
+  pomodoroWorkMinutes?: string; // "" or "25" みたいな文字列で受ける(ないときはポモドーロオフとか)
+
 };
 
 type Props = {
@@ -20,6 +22,7 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
   const [dueDate, setDueDate] = useState("");
   const [memo, setMemo] = useState("");
   const [targetHours, setTargetHours] = useState<string | number>("");
+  const [pomodoroWorkMinutes, setPomodoroWorkMinutes] = useState<string | number>("");
   function toHalfWidth(str: string) {
     return str.replace(/[０-９]/g, (s) =>
       String.fromCharCode(s.charCodeAt(0) - 0xfee0)
@@ -35,13 +38,21 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
     setDueDate("");
     setMemo("");
     setTargetHours("");
+    setPomodoroWorkMinutes("");
   }, [open]);
 
   if (!open) return null;
 
   const submit = () => {
     if (!canCreate) return;
-    onCreate({ name, dueDate, memo, targetHours: String(targetHours) });
+
+    onCreate({
+      name,
+      dueDate,
+      memo,
+      targetHours: String(targetHours),
+      pomodoroWorkMinutes: String(pomodoroWorkMinutes),
+    });
   };
 
   return (
@@ -136,6 +147,34 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
               }}
               style={{ width: 160, padding: 10, borderRadius: 10, border: "1px solid #ddd" }}
             />
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: 12, color: "#555", marginBottom: 6 }}>
+              ポモドーロ作業時間（任意 / 分）
+            </label>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={pomodoroWorkMinutes}
+              onChange={(e) => {
+                const raw = toHalfWidth(e.target.value);
+
+                if (raw === "") {
+                  setPomodoroWorkMinutes("");
+                  return;
+                }
+
+                const n = Number(raw);
+                if (Number.isFinite(n) && n > 0) {
+                  setPomodoroWorkMinutes(n);
+                }
+              }}
+              style={{ width: 160, padding: 10, borderRadius: 10, border: "1px solid #ddd" }}
+            />
+            <div style={{ fontSize: 12, color: "#888", marginTop: 6 }}>
+              例：25 を設定すると、このプロジェクトのデフォルト作業時間として使えます
+            </div>
           </div>
 
           <div>
