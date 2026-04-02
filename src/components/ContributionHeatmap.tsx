@@ -82,7 +82,7 @@ export default function ContributionHeatmap({ commits, title }: Props) {
 
   const [mode, setMode] = useState<Mode>("last365");
   const [year, setYear] = useState<number>(years[0] ?? new Date().getFullYear());
-    const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
 
     // 日別の合計時間とコミット数
@@ -236,7 +236,7 @@ export default function ContributionHeatmap({ commits, title }: Props) {
         const filtered = commits.filter((c) => dayKey(c.endedAt) === selectedDate);
         return (
             <div style={{ marginTop: 12 }}>
-            <h4>{selectedDate} のコミット</h4>
+            <h4>{selectedDate} のコミット ({filtered.length} 件)</h4>
             {filtered.length === 0 ? (
                 <div style={{ color: "#999", fontSize: 14 }}>コミットはありません</div>
             ) : (

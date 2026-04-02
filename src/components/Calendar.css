@@ -1,0 +1,38 @@
+/* 親コンテナ：中身を横に並べて中央揃えにする */
+.calendar-nav-container {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* 中央に寄せる */
+  gap: 16px;              /* ボタンと年月の間の隙間 */
+  margin-bottom: 20px;
+}
+
+/* ボタンの見た目（前回のスタイルを適用） */
+.nav-button {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%; /* 丸ボタンに */
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 18px;
+  color: #5f6368;
+}
+
+.nav-button:hover {
+  background-color: #f1f3f4;
+  color: #202124;
+}
+
+/* 年月表示のテキスト */
+.month-label {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  min-width: 150px; /* 月によって幅が変わってボタンが動くのを防ぐ */
+  text-align: center;
+  color: #3c4043;
+}

@@ -7,6 +7,9 @@ import { loadProjects, saveProjects, clearProjects,} from "../logic/storage";
 import type { Project } from "../logic/types";
 import ContributionHeatmap from "../components/ContributionHeatmap";
 import { loadCommits } from "../logic/storage";
+import ScheduleCalendar from "../components/ScheduleCalendar";
+import CalendarPage from "./CalendarPage";//　一旦ProjectsPageから直接CalendarPageを呼び出す形にしてみる（再レンダリングの挙動を見たいので）
+import CalendarBoard from "../components/CalendarBoard";
 
 
 
@@ -51,7 +54,8 @@ export default function ProjectsPage() {
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
-    
+    const [newproject, setNewProject] = useState<Project | null>(null);
+    const [commitsAll, setCommitsAll] = useState(() => loadCommits());
 
     // 変更のたびに永続化
     useEffect(() => {
@@ -60,7 +64,7 @@ export default function ProjectsPage() {
 
     useState(() => loadProjects());
 
-    const [commitsAll, setCommitsAll] = useState(() => loadCommits());
+    
     useEffect(() => {
         const onFocus = () => setCommitsAll(loadCommits());
         window.addEventListener("focus", onFocus);
@@ -115,7 +119,7 @@ export default function ProjectsPage() {
   return (
     <main style={{ maxWidth: 820, margin: "0 auto", padding: 24, fontFamily: "system-ui" }}>
       <header style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <h1 style={{ margin: 0 }}>Projects</h1>
+        <h1 style={{ margin: 0 }}>Worklog</h1>
         <button
           onClick={() => setIsCreateOpen(true)}
           style={{ marginLeft: "auto", padding: "10px 14px", borderRadius: 10 }}
@@ -198,9 +202,14 @@ export default function ProjectsPage() {
 
       <CreateProjectModal open={isCreateOpen} onClose={() => setIsCreateOpen(false)} onCreate={onCreate} />
     
+    <section>
+        <CalendarBoard projectsFromParent={projects} />
+    </section>
+    
     <section style={{ marginTop: 12 }}>
         <ContributionHeatmap commits={commitsAll} title="All Activity" />
     </section>
+    
     </main>
   );
 }
