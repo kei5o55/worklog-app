@@ -91,16 +91,36 @@ export default function ProjectsPage() {
   const onCreate = (input: NewProjectInput) => {
     const name = input.name.trim();
     if (!name) return;
+
     const th = Number(input.targetHours);
-    const targetHours =input.targetHours.trim() && Number.isFinite(th) && th > 0 ? th : undefined;
+    const targetHours =
+      input.targetHours.trim() && Number.isFinite(th) && th > 0 ? th : undefined;
+
+    const pwm = Number(input.pomodoroWorkMinutes);
+    const pomodoroWorkMinutes =
+      input.pomodoroWorkMinutes?.trim() &&
+      Number.isFinite(pwm) &&
+      pwm > 0
+        ? pwm
+        : undefined;
+
+    const pbm = Number(input.pomodoroBreakMinutes);
+    const pomodoroBreakMinutes =
+      input.pomodoroBreakMinutes?.trim() &&
+      Number.isFinite(pbm) &&
+      pbm > 0
+        ? pbm
+        : undefined;
 
     const p: Project = {
-        id: uid(),
-        name,
-        dueDate: input.dueDate?.trim() ? input.dueDate.trim() : undefined,
-        memo: input.memo?.trim() ? input.memo.trim() : undefined,
-        targetHours,
-        createdAt: Date.now(),
+      id: uid(),
+      name,
+      dueDate: input.dueDate?.trim() ? input.dueDate.trim() : undefined,
+      memo: input.memo?.trim() ? input.memo.trim() : undefined,
+      targetHours,
+      pomodoroWorkMinutes,
+      pomodoroBreakMinutes,
+      createdAt: Date.now(),
     };
 
     setProjects((prev) => [p, ...prev]);
@@ -165,7 +185,13 @@ export default function ProjectsPage() {
                     ) : (
                       <div style={{ fontSize: 12, color: "#999" }}>納期なし</div>
                     )}
-
+                    {p.pomodoroWorkMinutes && p.pomodoroBreakMinutes ? (
+                      <div style={{ fontSize: 12, color: "#666" }}>
+                        ポモドーロ: {p.pomodoroWorkMinutes}分 / 休憩 {p.pomodoroBreakMinutes}分
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 12, color: "#999" }}>ポモドーロ未設定</div>
+                    )}
                     <button
                       onClick={() => onDelete(p.id)}
                       style={{

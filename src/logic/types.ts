@@ -9,6 +9,8 @@ export type Project = {
     memo?: string;
     createdAt: number;
     targetHours?: number;
+    pomodoroWorkMinutes?: number;
+    pomodoroBreakMinutes?: number;
 
   // カレンダー表示用
   startDate?: string; // "YYYY-MM-DD"
@@ -18,7 +20,7 @@ export type Project = {
 
 export type WorkSessionStatus = "running" | "paused";
 
-export type TimerMode = "normal" | "pomodoro";
+export type TimerMode = "idle" | "work" | "break";
 
 export type WorkSession = {
     id: string;

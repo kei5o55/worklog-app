@@ -39,7 +39,7 @@ export function buildCalendarCells(
         const date = formatDate(current);
 
         const dayProjects = projects.filter((p) =>
-        isDateInRange(date, p.startDate, p.endDate)
+            isDateInRange(date, p.startDate, p.endDate)
         );
 
         const dueProjects = projects.filter((p) => p.dueDate === date);
@@ -48,13 +48,13 @@ export function buildCalendarCells(
         const dayCommits = commits.filter((c) => isCommitOnDate(c, date));
 
         cells.push({
-        date,
-        isCurrentMonth: current.getMonth() === month,
-        isCurrendDay: date === formatDate(new Date()),
-        projects: dayProjects,
-        dueProjects,
-        memos: dayMemos,
-        commits: dayCommits,
+            date,
+            isCurrentMonth: current.getMonth() === month,
+            isCurrendDay: date === formatDate(new Date()),
+            projects: dayProjects,
+            dueProjects,
+            memos: dayMemos,
+            commits: dayCommits,
         });
     }
 

@@ -5,7 +5,7 @@ import type { DraftCommit } from "../components/CommitModal";
 import CommitModal from "../components/CommitModal";
 import { useNavigate, useParams } from "react-router-dom";
 import { loadSessions, saveSessions, addCommit, loadProjects ,loadCommits} from "../logic/storage";
-import type { WorkSession } from "../logic/types";
+import type { TimerMode, WorkSession } from "../logic/types";
 
 type Project = {
     id: string;
@@ -39,25 +39,20 @@ function uid() {
         ? crypto.randomUUID()
         : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
-const STORAGE_KEY = "worklog:sessions:v1";
-const COMMITS_KEY = "worklog:commits:v1";
-
-
-
-type Commit = {
-    id: string;
-    projectId: string;
-    startedAt: number;
-    endedAt: number;
-    durationMs: number;
-    note: string;
-};
-
 
 export default function TimerPage() {
     const [sessions, setSessions] = useState<WorkSession[]>(() => loadSessions());
+    const [timerMode, setTimerMode] = useState<"normal" | "pomodoro-work" | "pomodoro-break">("normal");
+    const [pomodoroEnabled, setPomodoroEnabled] = useState(false);
+    const [cycleCount, setCycleCount] = useState(0);
+    const [phase, setPhase] = useState<TimerMode>("idle");
+    const [phaseStartedAt, setPhaseStartedAt] = useState<number | null>(null);
+    const [completedPomodoros, setCompletedPomodoros] = useState(0);
+    const [phasePausedAt, setPhasePausedAt] = useState<number | null>(null);
     const projects = useMemo(() => loadProjects(), []);
     const { projectId } = useParams();
+
+    
     
 
     // いまは仮。将来は projectId からプロジェクト名を引く
@@ -96,7 +91,8 @@ export default function TimerPage() {
     const [isCommitOpen, setIsCommitOpen] = useState(false);
 
     const navigate = useNavigate();
-    
+    const pomodoroWorkMs = (selectedProject.pomodoroWorkMinutes ?? 25) * 60 * 1000;
+    const pomodoroBreakMs = (selectedProject.pomodoroBreakMinutes ?? 5) * 60 * 1000;
 
     // 表示用の現在時刻（runningのときだけ更新）
     const [now, setNow] = useState<number>(() => Date.now());
@@ -141,6 +137,8 @@ export default function TimerPage() {
         return () => window.clearInterval(id);
     }, [running]);
 
+    
+
     // 経過時間（pausedならpausedAtで止める）
     const currentElapsedMs = useMemo(() => {
         const s = activeSession;
@@ -154,12 +152,81 @@ export default function TimerPage() {
         return now - s.startedAt;
     }, [activeSession, now]);
 
+    const currentPhaseElapsedMs = useMemo(() => {
+        if (!phaseStartedAt) return 0;
+        return now - phaseStartedAt;
+    }, [now, phaseStartedAt]);
+
+    const currentPhaseDurationMs = phase === "break" ? pomodoroBreakMs : pomodoroWorkMs;
+
+    const currentPhaseRemainingMs = Math.max(
+        0,
+        currentPhaseDurationMs - currentPhaseElapsedMs
+    );
+
+    useEffect(() => {
+        if (!pomodoroEnabled) return;
+        if (!activeSession) return;
+        if (activeSession.status !== "running") return;
+        if (phase === "idle") return;
+
+        if (currentPhaseRemainingMs > 0) return;
+
+        if (phase === "work") {
+            // いまの作業セッションを止めてコミットする代わりに、
+            // ここでは「自動で区切る」簡易版にする
+            const endedAt = Date.now();
+
+            addCommit({
+            id: uid(),
+            projectId: selectedProject.id,
+            startedAt: activeSession.startedAt,
+            endedAt,
+            durationMs: endedAt - activeSession.startedAt,
+            note: activeSession.note ?? "",
+            });
+
+            setSessions((prev) =>
+            prev.map((s) =>
+                s.id === activeSession.id
+                ? { ...s, endedAt, status: "paused", pausedAt: undefined }
+                : s
+            )
+            );
+
+            setCompletedPomodoros((v) => v + 1);
+            setPhase("break");
+            setPhaseStartedAt(Date.now());
+            return;
+        }
+
+        if (phase === "break") {
+            setPhase("work");
+            setPhaseStartedAt(Date.now());
+            startWithProject(selectedProject.id);
+        }
+        }, [
+        pomodoroEnabled,
+        activeSession,
+        phase,
+        currentPhaseRemainingMs,
+        selectedProject.id,
+    ]);
+
     // --- 一時停止/再開 ---
     const pause = () => {
         if (!running) return;
         const pausedAt = Date.now();
+
+        setNow(pausedAt);
+        if (pomodoroEnabled) {
+            setPhasePausedAt(pausedAt);
+        }
+
         setSessions((prev) =>
-            prev.map((s) => (s.id === running.id ? { ...s, status: "paused", pausedAt } : s))
+            prev.map((s) =>
+            s.id === running.id ? { ...s, status: "paused", pausedAt } : s
+            )
         );
     };
 
@@ -170,18 +237,24 @@ export default function TimerPage() {
         const pausedElapsed = pausedAt - paused.startedAt;
         const nowTs = Date.now();
 
-        // startedAt を "now - すでに経過した分" にずらすことで、
-        // 再開後も elapsed が連続する
+        setNow(nowTs);
+
+        if (pomodoroEnabled && phaseStartedAt && phasePausedAt) {
+            const phasePausedElapsed = phasePausedAt - phaseStartedAt;
+            setPhaseStartedAt(nowTs - phasePausedElapsed);
+            setPhasePausedAt(null);
+        }
+
         setSessions((prev) =>
             prev.map((s) =>
-                s.id === paused.id
-                    ? {
-                        ...s,
-                        status: "running",
-                        startedAt: nowTs - pausedElapsed,
-                        pausedAt: undefined,
-                    }
-                    : s
+            s.id === paused.id
+                ? {
+                    ...s,
+                    status: "running",
+                    startedAt: nowTs - pausedElapsed,
+                    pausedAt: undefined,
+                }
+                : s
             )
         );
     };
@@ -199,10 +272,21 @@ export default function TimerPage() {
         setSessions((prev) => [s, ...prev]);
     };
 
-    const start = () => startWithProject(selectedProject.id);
+    const start = () => {
+        if (pomodoroEnabled) {
+            const nowTs = Date.now();
+            setNow(nowTs);
+            setPhase("work");
+            setPhaseStartedAt(nowTs);
+        }
+        startWithProject(selectedProject.id);
+    };
     
     const stop = () => {
         if (!activeSession) return;
+
+        setPhase("idle");
+        setPhaseStartedAt(null);
 
         const endedAt = Date.now();
         const effectiveEnd =
@@ -317,6 +401,13 @@ export default function TimerPage() {
                 <div style={{ fontSize: 48, fontVariantNumeric: "tabular-nums", marginBottom: 8 }}>
                     {formatMs(currentElapsedMs)}
                 </div>
+                {pomodoroEnabled && (
+                    <div style={{ marginBottom: 12, color: "#555" }}>
+                        <div>フェーズ: {phase === "work" ? "作業中" : phase === "break" ? "休憩中" : "停止中"}</div>
+                        <div>残り時間: {formatMs(currentPhaseRemainingMs)}</div>
+                        <div>完了ポモドーロ数: {completedPomodoros}</div>
+                    </div>
+                )}
 
                 <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
                     <button
@@ -357,6 +448,23 @@ export default function TimerPage() {
                     >
                         Clear
                     </button>
+                </div>
+
+                <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 12 }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <input
+                        type="checkbox"
+                        checked={pomodoroEnabled}
+                        onChange={(e) => setPomodoroEnabled(e.target.checked)}
+                        disabled={!!activeSession}
+                        />
+                        ポモドーロを使う
+                    </label>
+
+                    <div style={{ fontSize: 12, color: "#666" }}>
+                        設定: {selectedProject.pomodoroWorkMinutes ?? 25}分 / 休憩{" "}
+                        {selectedProject.pomodoroBreakMinutes ?? 5}分
+                    </div>
                 </div>
 
                 <label style={{ display: "block", fontSize: 12, color: "#555", marginBottom: 6 }}>
