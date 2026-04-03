@@ -369,7 +369,62 @@ export default function TimerPage() {
     return (
         
         <main style={{ maxWidth: 720, margin: "0 auto", padding: 24, fontFamily: "system-ui" }}>
-            <h1 style={{ fontSize: 22, marginBottom: 12 }}>{selectedProject?.name ?? "Worklog Timer"}</h1>
+            <header style={{ marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                    <h1 style={{ fontSize: 22, margin: 0 }}>
+                    {selectedProject?.name ?? "Worklog Timer"}
+                    </h1>
+
+                    {selectedProject.dueDate ? (
+                    <span
+                        style={{
+                        fontSize: 12,
+                        padding: "4px 8px",
+                        borderRadius: 999,
+                        background: "#fff3cd",
+                        border: "1px solid #f0d98c",
+                        }}
+                    >
+                        納期: {selectedProject.dueDate}
+                    </span>
+                    ) : null}
+
+                    {selectedProject.pomodoroWorkMinutes ? (
+                    <span
+                        style={{
+                        fontSize: 12,
+                        padding: "4px 8px",
+                        borderRadius: 999,
+                        background: "#eef6ff",
+                        border: "1px solid #c9defa",
+                        }}
+                    >
+                        {selectedProject.pomodoroWorkMinutes}分 / 休憩{" "}
+                        {selectedProject.pomodoroBreakMinutes ?? 5}分
+                    </span>
+                    ) : null}
+
+                    {selectedProject.targetHours ? (
+                    <span
+                        style={{
+                        fontSize: 12,
+                        padding: "4px 8px",
+                        borderRadius: 999,
+                        background: "#f4f4f4",
+                        border: "1px solid #ddd",
+                        }}
+                    >
+                        目標: {selectedProject.targetHours}h
+                    </span>
+                    ) : null}
+                </div>
+
+                {selectedProject.memo?.trim() ? (
+                    <p style={{ marginTop: 8, marginBottom: 0, fontSize: 13, color: "#666" }}>
+                    {selectedProject.memo}
+                    </p>
+                ) : null}
+                </header>
 
             <section
                 style={{
