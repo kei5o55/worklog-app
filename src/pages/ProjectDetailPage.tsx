@@ -49,7 +49,6 @@ export default function ProjectDetailPage() {
   }, [commitsAll, projectId]);
 
   const totalMs = useMemo(() => commits.reduce((sum, c) => sum + c.durationMs, 0), [commits]);
-    
 
   if (!projectId) {
     return (
@@ -72,6 +71,13 @@ export default function ProjectDetailPage() {
     const targetMs = project.targetHours ? project.targetHours * 60 * 60 * 1000 : null;
     const ratio = targetMs ? Math.min(1, totalMs / targetMs) : null;
     const percent = ratio != null ? Math.floor(ratio * 100) : null;
+    const pomodoroWorkMinutes = project.pomodoroWorkMinutes ?? null;
+    const pomodoroBreakMinutes = project.pomodoroBreakMinutes ?? null;
+
+    const estimatedPomodoroCount =
+      pomodoroWorkMinutes && pomodoroWorkMinutes > 0
+        ? Math.floor(totalMs / (pomodoroWorkMinutes * 60 * 1000))
+        : null;
 
   return (
     <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
@@ -161,6 +167,20 @@ export default function ProjectDetailPage() {
                 </div>
             </div>
         ) : null}
+    </section>
+    
+    <section style={{ marginTop: 16, border: "1px solid #ddd", borderRadius: 12, padding: 12 }}>
+      <h2 style={{ fontSize: 16, marginTop: 0 }}>ポモドーロ</h2>
+
+      {project.pomodoroWorkMinutes ? (
+        <>
+          <div>作業時間：{project.pomodoroWorkMinutes}分</div>
+          <div>休憩時間：{project.pomodoroBreakMinutes ?? 5}分</div>
+          <div>完了ポモドーロ目安：{estimatedPomodoroCount ?? 0}回</div>
+        </>
+      ) : (
+        <div style={{ color: "#777" }}>このプロジェクトにはポモドーロ設定がありません。</div>
+      )}
     </section>
 
       {/* 下：ギャラリー（仮） */}
