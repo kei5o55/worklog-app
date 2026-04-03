@@ -104,7 +104,7 @@ export default function ProjectDetailPage() {
 
       {/* 中：履歴 */}
       <section style={{ marginTop: 16 }}>
-        <h2 style={{ fontSize: 16 }}>履歴</h2>
+        <h2 style={{ fontSize: 16 }}>作業履歴</h2>
 
         {commits.length === 0 ? (
           <div style={{ border: "1px dashed #bbb", borderRadius: 12, padding: 16, color: "#777" }}>
@@ -143,7 +143,7 @@ export default function ProjectDetailPage() {
             ))}
         </ul>
         )}
-        </section>
+      </section>
     
     <section style={{ marginTop: 16 }}>
         {project.targetHours ? (
@@ -168,9 +168,9 @@ export default function ProjectDetailPage() {
             </div>
         ) : null}
     </section>
-    
+    <h2 style={{ fontSize: 16, marginTop: 0 }}>ポモドーロ</h2>
     <section style={{ marginTop: 16, border: "1px solid #ddd", borderRadius: 12, padding: 12 }}>
-      <h2 style={{ fontSize: 16, marginTop: 0 }}>ポモドーロ</h2>
+      
 
       {project.pomodoroWorkMinutes ? (
         <>
