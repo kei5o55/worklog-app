@@ -43,8 +43,6 @@ export default function TimerPage() {
     const projects = useMemo(() => loadProjects(), []);
     const { projectId } = useParams();
 
-    
-
     // いまは仮。将来は projectId からプロジェクト名を引く
     const selectedProject = useMemo(() => {
         if (!projectId) return null;
@@ -184,6 +182,16 @@ export default function TimerPage() {
         phase,
         currentPhaseRemainingMs,
     ]);
+
+    const confirmLeaveIfNeeded = () => {
+        if (!activeSession) return true;
+        return window.confirm("現在の作業が終了していません。ページを離れますか？");
+    };
+
+    const handleBackToProjects = () => {
+        if (!confirmLeaveIfNeeded()) return;
+        navigate("/projects");
+    };
 
     // --- 一時停止/再開 ---
     const pause = () => {
@@ -346,6 +354,18 @@ export default function TimerPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (!activeSession) return;
+
+            e.preventDefault();
+            e.returnValue = "現在の作業が終了していません。";
+        };
+
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    }, [activeSession]);
+
     // --- 保存（コミット確定） ---
     const finalizeAndClose = () => {
         // モーダル閉じるだけ（キャンセル）
@@ -369,6 +389,7 @@ export default function TimerPage() {
     return (
         
         <main style={{ maxWidth: 720, margin: "0 auto", padding: 24, fontFamily: "system-ui" }}>
+        <button onClick={handleBackToProjects}>←Projectsへ戻る</button>
             <header style={{ marginBottom: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                     <h1 style={{ fontSize: 22, margin: 0 }}>
