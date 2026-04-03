@@ -19,6 +19,14 @@ function formatMs(ms: number) {
     return `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
 }
 
+function playSE(src: string) {
+    const audio = new Audio(src);
+    audio.currentTime = 0;
+    audio.play().catch(() => {
+        // 自動再生制限などで失敗しても落とさない
+    });
+}
+
 function uid() {
     return typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
@@ -151,12 +159,14 @@ export default function TimerPage() {
         if (!activeSession) return;
         if (activeSession.status !== "running") return;
         if (phase === "idle") return;
+
         if (currentPhaseRemainingMs > 0) return;
 
         const nowTs = Date.now();
         setNow(nowTs);
 
         if (phase === "work") {
+            playSE("/sounds/se.mp3");
             setCompletedPomodoros((v) => v + 1);
             setPhase("break");
             setPhaseStartedAt(nowTs);
@@ -164,6 +174,7 @@ export default function TimerPage() {
         }
 
         if (phase === "break") {
+            playSE("/sounds/se.mp3");
             setPhase("work");
             setPhaseStartedAt(nowTs);
         }
