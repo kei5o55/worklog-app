@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { NewProjectInput } from "../components/CreateProjectModal";
 import CreateProjectModal from "../components/CreateProjectModal";
-import { loadProjects, saveProjects, clearProjects,} from "../logic/storage";
+import { loadProjects, saveProjects, clearProjects, loadSessions } from "../logic/storage";
 import type { Project } from "../logic/types";
 import ContributionHeatmap from "../components/ContributionHeatmap";
 import { loadCommits } from "../logic/storage";
@@ -56,6 +56,7 @@ export default function ProjectsPage() {
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [newproject, setNewProject] = useState<Project | null>(null);
     const [commitsAll, setCommitsAll] = useState(() => loadCommits());
+    const [sessionsAll, setSessionsAll] = useState(() => loadSessions());
 
     // 変更のたびに永続化
     useEffect(() => {
@@ -66,10 +67,16 @@ export default function ProjectsPage() {
 
     
     useEffect(() => {
-        const onFocus = () => setCommitsAll(loadCommits());
-        window.addEventListener("focus", onFocus);
-        return () => window.removeEventListener("focus", onFocus);
+      const onFocus = () => {
+        setCommitsAll(loadCommits());
+        setSessionsAll(loadSessions());
+      };
+      window.addEventListener("focus", onFocus);
+      return () => window.removeEventListener("focus", onFocus);
     }, []);
+    
+    
+
     
   const sorted = useMemo(() => {
     const copy = [...projects];
@@ -127,6 +134,8 @@ export default function ProjectsPage() {
     setIsCreateOpen(false);
   };
 
+  
+
   const onDelete = (id: string) => {
     // 表示ラベルだけ先に確定
     const target = projects.find((p) => p.id === id);
@@ -162,21 +171,55 @@ export default function ProjectsPage() {
             {sorted.map((p) => {
               const due = p.dueDate?.trim() ? p.dueDate.trim() : "";
               const remain = due ? daysUntil(due) : null;
+              const activeSession = sessionsAll.find(
+                (s) => s.projectId === p.id && s.endedAt == null
+              );
+              const isRunning = activeSession?.status === "running";
+              const isPaused = activeSession?.status === "paused";
 
               return (
-                <article
-                  key={p.id}
-                  style={{
-                    border: "1px solid #ddd",
-                    borderRadius: 14,
-                    padding: 14,
-                    display: "grid",
-                    gap: 10,
-                  }}
-                >
+                  <article
+                    key={p.id}
+                    style={{
+                      border: isRunning ? "2px solid #4f8cff" : "1px solid #ddd",
+                      background: isRunning ? "#f5f9ff" : "white",
+                      borderRadius: 14,
+                      padding: 14,
+                      display: "grid",
+                      gap: 10,
+                      boxShadow: isRunning ? "0 0 0 3px rgba(79,140,255,0.12)" : "none",
+                    }}
+                  >
                   <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
                     <div style={{ fontSize: 18, fontWeight: 700 }}>{p.name}</div>
-
+                      {isRunning ? (
+                        <span
+                          style={{
+                            fontSize: 12,
+                            padding: "2px 8px",
+                            borderRadius: 999,
+                            background: "#e8f1ff",
+                            border: "1px solid #4f8cff",
+                            color: "#2f6fd6",
+                          }}
+                        >
+                          作業中
+                        </span>
+                      ) : isPaused ? (
+                        <span
+                          style={{
+                            fontSize: 12,
+                            padding: "2px 8px",
+                            borderRadius: 999,
+                            background: "#f5f5f5",
+                            border: "1px solid #bbb",
+                            color: "#666",
+                          }}
+                        >
+                          一時停止中
+                        </span>
+                      ) : null}
+                    
                     {due ? (
                       <div style={{ fontSize: 12, color: "#666" }}>
                         納期: {due}
