@@ -1,8 +1,9 @@
 //src/pages/ProjectDetailPage.tsx
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { loadProjects, loadCommits } from "../logic/storage";
+import { loadProjects, loadCommits, saveProjects, } from "../logic/storage";
 import type { Project, Commit } from "../logic/types";
+
 
 
 function pad2(n: number) {
@@ -22,7 +23,8 @@ export default function ProjectDetailPage() {
 
   const [projects, setProjects] = useState<Project[]>(() => loadProjects());
   const [commitsAll, setCommitsAll] = useState<Commit[]>(() => loadCommits());
-    
+  const [workMinutesInput, setWorkMinutesInput] = useState("");
+  const [breakMinutesInput, setBreakMinutesInput] = useState("");
 
   const refresh = () => {
     setProjects(loadProjects());
@@ -35,6 +37,8 @@ export default function ProjectDetailPage() {
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, []);
+
+  
 
   const project = useMemo(() => {
     if (!projectId) return null;
@@ -68,6 +72,43 @@ export default function ProjectDetailPage() {
       </main>
     );
   }
+
+  useEffect(() => {
+    if (!project) return;
+    setWorkMinutesInput(
+      project.pomodoroWorkMinutes ? String(project.pomodoroWorkMinutes) : ""
+    );
+    setBreakMinutesInput(
+      project.pomodoroBreakMinutes ? String(project.pomodoroBreakMinutes) : ""
+    );
+  }, [project]);
+
+  const handleSavePomodoroSettings = () => {
+    if (!project) return;
+
+    const work = Number(workMinutesInput);
+    const rest = Number(breakMinutesInput);
+
+    const nextProjects = projects.map((p) =>
+      p.id === project.id
+        ? {
+            ...p,
+            pomodoroWorkMinutes:
+              workMinutesInput.trim() && Number.isFinite(work) && work > 0
+                ? work
+                : undefined,
+            pomodoroBreakMinutes:
+              breakMinutesInput.trim() && Number.isFinite(rest) && rest > 0
+                ? rest
+                : undefined,
+          }
+        : p
+    );
+
+    setProjects(nextProjects);
+    saveProjects(nextProjects);
+  };
+
     const targetMs = project.targetHours ? project.targetHours * 60 * 60 * 1000 : null;
     const ratio = targetMs ? Math.min(1, totalMs / targetMs) : null;
     const percent = ratio != null ? Math.floor(ratio * 100) : null;
@@ -170,17 +211,60 @@ export default function ProjectDetailPage() {
     </section>
     <h2 style={{ fontSize: 16, marginTop: 0 }}>ポモドーロ</h2>
     <section style={{ marginTop: 16, border: "1px solid #ddd", borderRadius: 12, padding: 12 }}>
-      
+      <div style={{ display: "grid", gap: 12 }}>
+        <div>
+          <label style={{ display: "block", fontSize: 12, color: "#555", marginBottom: 6 }}>
+            作業時間（分）
+          </label>
+          <input
+            type="number"
+            min={1}
+            step={1}
+            value={workMinutesInput}
+            onChange={(e) => setWorkMinutesInput(e.target.value)}
+            style={{ width: 160, padding: 10, borderRadius: 10, border: "1px solid #ddd" }}
+          />
+        </div>
 
-      {project.pomodoroWorkMinutes ? (
-        <>
-          <div>作業時間：{project.pomodoroWorkMinutes}分</div>
-          <div>休憩時間：{project.pomodoroBreakMinutes ?? 5}分</div>
-          <div>完了ポモドーロ目安：{estimatedPomodoroCount ?? 0}回</div>
-        </>
-      ) : (
-        <div style={{ color: "#777" }}>このプロジェクトにはポモドーロ設定がありません。</div>
-      )}
+        <div>
+          <label style={{ display: "block", fontSize: 12, color: "#555", marginBottom: 6 }}>
+            休憩時間（分）
+          </label>
+          <input
+            type="number"
+            min={1}
+            step={1}
+            value={breakMinutesInput}
+            onChange={(e) => setBreakMinutesInput(e.target.value)}
+            style={{ width: 160, padding: 10, borderRadius: 10, border: "1px solid #ddd" }}
+          />
+        </div>
+
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <button
+            onClick={handleSavePomodoroSettings}
+            style={{ padding: "8px 12px", borderRadius: 10 }}
+          >
+            保存
+          </button>
+
+          {project.pomodoroWorkMinutes ? (
+            <span style={{ fontSize: 12, color: "#666" }}>
+              現在: {project.pomodoroWorkMinutes}分 / 休憩 {project.pomodoroBreakMinutes ?? 5}分
+            </span>
+          ) : (
+            <span style={{ fontSize: 12, color: "#777" }}>
+              このプロジェクトにはポモドーロ設定がありません。
+            </span>
+          )}
+        </div>
+
+        {project.pomodoroWorkMinutes ? (
+          <div style={{ fontSize: 13, color: "#555" }}>
+            完了ポモドーロ目安：{estimatedPomodoroCount ?? 0}回
+          </div>
+        ) : null}
+      </div>
     </section>
 
       {/* 下：ギャラリー（仮） */}
