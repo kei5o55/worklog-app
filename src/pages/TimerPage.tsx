@@ -7,22 +7,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import { loadSessions, saveSessions, addCommit, loadProjects ,loadCommits} from "../logic/storage";
 import type { TimerMode, WorkSession } from "../logic/types";
 
-type Project = {
-    id: string;
-    name: string;
-};
-
-const PROJECTS: Project[] = [//仮プロジェクト
-    { id: "p1", name: "NARAKU" },
-    { id: "p2", name: "MISORIA" },
-];
-
-
 function pad2(n: number) {
     return String(n).padStart(2, "0");
 }
-
-
 
 function formatMs(ms: number) {
     const totalSec = Math.max(0, Math.floor(ms / 1000));
@@ -32,7 +19,13 @@ function formatMs(ms: number) {
     return `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
 }
 
-
+function playSE(src: string) {
+    const audio = new Audio(src);
+    audio.currentTime = 0;
+    audio.play().catch(() => {
+        // 自動再生制限などで失敗しても落とさない
+    });
+}
 
 function uid() {
     return typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -42,18 +35,13 @@ function uid() {
 
 export default function TimerPage() {
     const [sessions, setSessions] = useState<WorkSession[]>(() => loadSessions());
-    const [timerMode, setTimerMode] = useState<"normal" | "pomodoro-work" | "pomodoro-break">("normal");
     const [pomodoroEnabled, setPomodoroEnabled] = useState(false);
-    const [cycleCount, setCycleCount] = useState(0);
     const [phase, setPhase] = useState<TimerMode>("idle");
     const [phaseStartedAt, setPhaseStartedAt] = useState<number | null>(null);
     const [completedPomodoros, setCompletedPomodoros] = useState(0);
     const [phasePausedAt, setPhasePausedAt] = useState<number | null>(null);
     const projects = useMemo(() => loadProjects(), []);
     const { projectId } = useParams();
-
-    
-    
 
     // いまは仮。将来は projectId からプロジェクト名を引く
     const selectedProject = useMemo(() => {
@@ -172,46 +160,38 @@ export default function TimerPage() {
 
         if (currentPhaseRemainingMs > 0) return;
 
+        const nowTs = Date.now();
+        setNow(nowTs);
+
         if (phase === "work") {
-            // いまの作業セッションを止めてコミットする代わりに、
-            // ここでは「自動で区切る」簡易版にする
-            const endedAt = Date.now();
-
-            addCommit({
-            id: uid(),
-            projectId: selectedProject.id,
-            startedAt: activeSession.startedAt,
-            endedAt,
-            durationMs: endedAt - activeSession.startedAt,
-            note: activeSession.note ?? "",
-            });
-
-            setSessions((prev) =>
-            prev.map((s) =>
-                s.id === activeSession.id
-                ? { ...s, endedAt, status: "paused", pausedAt: undefined }
-                : s
-            )
-            );
-
+            playSE("/sounds/se.mp3");
             setCompletedPomodoros((v) => v + 1);
             setPhase("break");
-            setPhaseStartedAt(Date.now());
+            setPhaseStartedAt(nowTs);
             return;
         }
 
         if (phase === "break") {
+            playSE("/sounds/se.mp3");
             setPhase("work");
-            setPhaseStartedAt(Date.now());
-            startWithProject(selectedProject.id);
+            setPhaseStartedAt(nowTs);
         }
-        }, [
+    }, [
         pomodoroEnabled,
         activeSession,
         phase,
         currentPhaseRemainingMs,
-        selectedProject.id,
     ]);
+
+    const confirmLeaveIfNeeded = () => {
+        if (!activeSession) return true;
+        return window.confirm("現在の作業が終了していません。ページを離れますか？");
+    };
+
+    const handleBackToProjects = () => {
+        if (!confirmLeaveIfNeeded()) return;
+        navigate("/projects");
+    };
 
     // --- 一時停止/再開 ---
     const pause = () => {
@@ -273,12 +253,20 @@ export default function TimerPage() {
     };
 
     const start = () => {
+        const nowTs = Date.now();
+        setNow(nowTs);
+
         if (pomodoroEnabled) {
-            const nowTs = Date.now();
-            setNow(nowTs);
             setPhase("work");
             setPhaseStartedAt(nowTs);
+            setCompletedPomodoros(0);
+            setPhasePausedAt(null);
+        } else {
+            setPhase("idle");
+            setPhaseStartedAt(null);
+            setPhasePausedAt(null);
         }
+
         startWithProject(selectedProject.id);
     };
     
@@ -287,6 +275,7 @@ export default function TimerPage() {
 
         setPhase("idle");
         setPhaseStartedAt(null);
+        setPhasePausedAt(null);
 
         const endedAt = Date.now();
         const effectiveEnd =
@@ -365,6 +354,18 @@ export default function TimerPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (!activeSession) return;
+
+            e.preventDefault();
+            e.returnValue = "現在の作業が終了していません。";
+        };
+
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    }, [activeSession]);
+
     // --- 保存（コミット確定） ---
     const finalizeAndClose = () => {
         // モーダル閉じるだけ（キャンセル）
@@ -388,7 +389,63 @@ export default function TimerPage() {
     return (
         
         <main style={{ maxWidth: 720, margin: "0 auto", padding: 24, fontFamily: "system-ui" }}>
-            <h1 style={{ fontSize: 22, marginBottom: 12 }}>{selectedProject?.name ?? "Worklog Timer"}</h1>
+        <button onClick={handleBackToProjects}>←Projectsへ戻る</button>
+            <header style={{ marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                    <h1 style={{ fontSize: 22, margin: 0 }}>
+                    {selectedProject?.name ?? "Worklog Timer"}
+                    </h1>
+
+                    {selectedProject.dueDate ? (
+                    <span
+                        style={{
+                        fontSize: 12,
+                        padding: "4px 8px",
+                        borderRadius: 999,
+                        background: "#fff3cd",
+                        border: "1px solid #f0d98c",
+                        }}
+                    >
+                        納期: {selectedProject.dueDate}
+                    </span>
+                    ) : null}
+
+                    {selectedProject.pomodoroWorkMinutes ? (
+                    <span
+                        style={{
+                        fontSize: 12,
+                        padding: "4px 8px",
+                        borderRadius: 999,
+                        background: "#eef6ff",
+                        border: "1px solid #c9defa",
+                        }}
+                    >
+                        {selectedProject.pomodoroWorkMinutes}分 / 休憩{" "}
+                        {selectedProject.pomodoroBreakMinutes ?? 5}分
+                    </span>
+                    ) : null}
+
+                    {selectedProject.targetHours ? (
+                    <span
+                        style={{
+                        fontSize: 12,
+                        padding: "4px 8px",
+                        borderRadius: 999,
+                        background: "#f4f4f4",
+                        border: "1px solid #ddd",
+                        }}
+                    >
+                        目標: {selectedProject.targetHours}h
+                    </span>
+                    ) : null}
+                </div>
+
+                {selectedProject.memo?.trim() ? (
+                    <p style={{ marginTop: 8, marginBottom: 0, fontSize: 13, color: "#666" }}>
+                    {selectedProject.memo}
+                    </p>
+                ) : null}
+                </header>
 
             <section
                 style={{

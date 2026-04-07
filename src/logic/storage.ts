@@ -43,11 +43,27 @@ export function normalizeProject(p: Project): Project {
       ? p.targetHours
       : undefined;
 
+  const pwm =
+    typeof p.pomodoroWorkMinutes === "number" &&
+    Number.isFinite(p.pomodoroWorkMinutes) &&
+    p.pomodoroWorkMinutes > 0
+      ? p.pomodoroWorkMinutes
+      : undefined;
+
+  const pbm =
+    typeof p.pomodoroBreakMinutes === "number" &&
+    Number.isFinite(p.pomodoroBreakMinutes) &&
+    p.pomodoroBreakMinutes > 0
+      ? p.pomodoroBreakMinutes
+      : undefined;
+
   return {
     ...p,
     dueDate: normalizeString(p.dueDate),
     memo: normalizeString(p.memo),
     targetHours: th,
+    pomodoroWorkMinutes: pwm,
+    pomodoroBreakMinutes: pbm,
     startDate: normalizeString(p.startDate),
     endDate: normalizeString(p.endDate),
     color: normalizeString(p.color),
@@ -67,6 +83,10 @@ export function loadProjects(): Project[] {
         memo: typeof x.memo === "string" ? x.memo : undefined,
         createdAt: typeof x.createdAt === "number" ? x.createdAt : Date.now(),
         targetHours: typeof x.targetHours === "number" ? x.targetHours : undefined,
+        pomodoroWorkMinutes:
+          typeof x.pomodoroWorkMinutes === "number" ? x.pomodoroWorkMinutes : undefined,
+        pomodoroBreakMinutes:
+          typeof x.pomodoroBreakMinutes === "number" ? x.pomodoroBreakMinutes : undefined,
         startDate: typeof x.startDate === "string" ? x.startDate : undefined,
         endDate: typeof x.endDate === "string" ? x.endDate : undefined,
         color: typeof x.color === "string" ? x.color : undefined,
