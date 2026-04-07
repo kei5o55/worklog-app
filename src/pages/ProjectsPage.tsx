@@ -181,13 +181,12 @@ export default function ProjectsPage() {
                   <article
                     key={p.id}
                     style={{
-                      border: isRunning ? "2px solid #4f8cff" : "1px solid #ddd",
-                      background: isRunning ? "#f5f9ff" : "white",
+                      border: "1px solid #b9b9b9",
+                      background:"white",
                       borderRadius: 14,
                       padding: 14,
                       display: "grid",
                       gap: 10,
-                      boxShadow: isRunning ? "0 0 0 3px rgba(79,140,255,0.12)" : "none",
                     }}
                   >
                   <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
