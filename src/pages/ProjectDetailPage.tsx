@@ -1,6 +1,7 @@
 //src/pages/ProjectDetailPage.tsx
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
+import { loadProjectsIdb, saveProjectsIdb } from "../logic/storage-idb";
 import { loadProjects, loadCommits, saveProjects, } from "../logic/storage";
 import type { Project, Commit } from "../logic/types";
 
@@ -36,6 +37,24 @@ export default function ProjectDetailPage() {
     const onFocus = () => refresh();
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
+  }, []);
+
+  //idbの初期化テスト
+  useEffect(() => {
+    (async () => {
+      console.log("IDB test start");
+
+      await saveProjectsIdb([
+        {
+          id: "test",
+          name: "IndexedDB test",
+          createdAt: Date.now(),
+        },
+      ]);
+
+      const data = await loadProjectsIdb();
+      console.log("IDB data:", data);
+    })();
   }, []);
 
   
