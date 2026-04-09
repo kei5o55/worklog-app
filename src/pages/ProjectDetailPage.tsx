@@ -1,7 +1,7 @@
 //src/pages/ProjectDetailPage.tsx
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { loadProjectsIdb, saveProjectsIdb } from "../logic/storage-idb";
+import { loadProjectsIdb, loadCommitsIdb,saveProjectsIdb } from "../logic/storage-idb";
 import { loadProjects, loadCommits, saveProjects, } from "../logic/storage";
 import type { Project, Commit } from "../logic/types";
 
@@ -22,19 +22,40 @@ function formatMs(ms: number) {
 export default function ProjectDetailPage() {
   const { projectId } = useParams();
 
-  const [projects, setProjects] = useState<Project[]>(() => loadProjects());
-  const [commitsAll, setCommitsAll] = useState<Commit[]>(() => loadCommits());
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [commitsAll, setCommitsAll] = useState<Commit[]>([]);
+  const [loading, setLoading] = useState(true);
   const [workMinutesInput, setWorkMinutesInput] = useState("");
   const [breakMinutesInput, setBreakMinutesInput] = useState("");
 
-  const refresh = () => {
+  /*const refresh = () => {
     setProjects(loadProjects());
     setCommitsAll(loadCommits());
+  };*/
+
+  const refresh = async () => {// idb版のリフレッシュ関数。ProjectsPageの方もこれに合わせて書き換える予定
+    const [nextProjects, nextCommits] = await Promise.all([
+      loadProjectsIdb(),
+      loadCommitsIdb(),
+    ]);
+
+    setProjects(nextProjects);
+    setCommitsAll(nextCommits);
   };
 
-  // Timerから戻ってきた直後も反映されやすくする
   useEffect(() => {
-    const onFocus = () => refresh();
+    void (async () => {
+      setLoading(true);
+      await refresh();
+      setLoading(false);
+    })();
+  }, []);
+
+  useEffect(() => {// idb版のリフレッシュ関数に合わせて書き換え
+    const onFocus = () => {
+      void refresh();
+    };
+
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, []);
@@ -59,38 +80,44 @@ export default function ProjectDetailPage() {
 
   
 
-  const project = useMemo(() => {
-    if (!projectId) return null;
-    return projects.find((p) => p.id === projectId) ?? null;
-  }, [projects, projectId]);
+    const project = useMemo(() => {
+      if (!projectId) return null;
+      return projects.find((p) => p.id === projectId) ?? null;
+    }, [projects, projectId]);
 
-  const commits = useMemo(() => {
-    if (!projectId) return [];
-    return commitsAll
-      .filter((c) => c.projectId === projectId)
-      .sort((a, b) => b.endedAt - a.endedAt);
-  }, [commitsAll, projectId]);
+    const commits = useMemo(() => {
+      if (!projectId) return [];
+      return commitsAll
+        .filter((c) => c.projectId === projectId)
+        .sort((a, b) => b.endedAt - a.endedAt);
+    }, [commitsAll, projectId]);
 
-  const totalMs = useMemo(() => commits.reduce((sum, c) => sum + c.durationMs, 0), [commits]);
+    if (!projectId) {
+      return (
+        <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
+          <h2>Project not found</h2>
+          <Link to="/projects">Projectsへ戻る</Link>
+        </main>
+      );
+    }
 
-  if (!projectId) {
-    return (
-      <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
-        <h2>Project not found</h2>
-        <Link to="/projects">Projectsへ戻る</Link>
-      </main>
-    );
-  }
+    if (loading) {
+      return (
+        <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
+          <p>Loading...</p>
+        </main>
+      );
+    }
 
-  if (!project) {
-    return (
-      <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
-        <h2>Project not found</h2>
-        <p style={{ color: "#666" }}>Projectsに存在しないIDです。</p>
-        <Link to="/projects">Projectsへ戻る</Link>
-      </main>
-    );
-  }
+    if (!project) {
+      return (
+        <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
+          <h2>Project not found</h2>
+          <p style={{ color: "#666" }}>Projectsに存在しないIDです。</p>
+          <Link to="/projects">Projectsへ戻る</Link>
+        </main>
+      );
+    }
 
   useEffect(() => {
     if (!project) return;
@@ -128,11 +155,13 @@ export default function ProjectDetailPage() {
     saveProjects(nextProjects);
   };
 
+    const totalMs = useMemo(() => commits.reduce((sum, c) => sum + c.durationMs, 0), [commits]);
     const targetMs = project.targetHours ? project.targetHours * 60 * 60 * 1000 : null;
     const ratio = targetMs ? Math.min(1, totalMs / targetMs) : null;
     const percent = ratio != null ? Math.floor(ratio * 100) : null;
     const pomodoroWorkMinutes = project.pomodoroWorkMinutes ?? null;
     const pomodoroBreakMinutes = project.pomodoroBreakMinutes ?? null;
+    
 
     const estimatedPomodoroCount =
       pomodoroWorkMinutes && pomodoroWorkMinutes > 0
