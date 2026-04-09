@@ -1,4 +1,5 @@
 //src/pages/ProjectDetailPage.tsx
+//　今はidbからデータを取ってくる。projectpageはまだlocalstorageのままなので、今後両方ともidbにする予定
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { loadProjectsIdb, loadCommitsIdb,saveProjectsIdb } from "../logic/storage-idb";
