@@ -21,6 +21,7 @@ export default function CommitDetailPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [commitsAll, setCommitsAll] = useState<Commit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,6 +58,20 @@ export default function CommitDetailPage() {
     if (!projectId || !commitId) return null;
     return commitsAll.find((c) => c.id === commitId && c.projectId === projectId) ?? null;
   }, [commitsAll, projectId, commitId]);
+
+  useEffect(() => {
+      if (!commit?.image?.blob) {
+          setImageUrl(null);
+          return;
+      }
+
+      const url = URL.createObjectURL(commit.image.blob);
+      setImageUrl(url);
+
+      return () => {
+          URL.revokeObjectURL(url);
+      };
+  }, [commit]);
 
   if (!projectId || !commitId) {
     return (
@@ -120,7 +135,31 @@ export default function CommitDetailPage() {
             <div style={{ color: "#999" }}>（メモなし）</div>
           )}
         </div>
+        {commit.image && imageUrl && (
+        <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 12, color: "#555", marginBottom: 6 }}>添付画像</div>
 
+            <a href={imageUrl} target="_blank" rel="noreferrer">
+                <img
+                    src={imageUrl}
+                    alt={commit.image.name}
+                    style={{
+                        width: "100%",
+                        maxWidth: 420,
+                        height: "auto",
+                        borderRadius: 10,
+                        border: "1px solid #ddd",
+                        display: "block",
+                        cursor: "zoom-in",
+                    }}
+                />
+            </a>
+
+            <div style={{ marginTop: 8, fontSize: 12, color: "#666" }}>
+                {commit.image.name}
+            </div>
+        </div>
+    )}
         <div style={{ marginTop: 12, fontSize: 12, color: "#888" }}>Commit ID: {commit.id}</div>
       </section>
     </main>
