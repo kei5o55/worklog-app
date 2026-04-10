@@ -1,7 +1,7 @@
 // src/pages/CommitDetailPage.tsx
 import { Link, useParams } from "react-router-dom";
-import { useMemo } from "react";
-import { loadProjects, loadCommits } from "../logic/storage";
+import { useEffect, useMemo, useState } from "react";
+import { loadProjectsIdb, loadCommitsIdb } from "../logic/storage-idb";
 import type { Project, Commit } from "../logic/types";
 
 function pad2(n: number) {
@@ -18,8 +18,35 @@ function formatMs(ms: number) {
 export default function CommitDetailPage() {
   const { projectId, commitId } = useParams();
 
-  const projects = useMemo<Project[]>(() => loadProjects(), []);
-  const commitsAll = useMemo<Commit[]>(() => loadCommits(), []);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [commitsAll, setCommitsAll] = useState<Commit[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function init() {
+      try {
+        const [loadedProjects, loadedCommits] = await Promise.all([
+          loadProjectsIdb(),
+          loadCommitsIdb(),
+        ]);
+
+        if (cancelled) return;
+
+        setProjects(loadedProjects);
+        setCommitsAll(loadedCommits);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void init();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const project = useMemo(() => {
     if (!projectId) return null;
@@ -36,6 +63,14 @@ export default function CommitDetailPage() {
       <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
         <h2>Not found</h2>
         <Link to="/projects">Projectsへ</Link>
+      </main>
+    );
+  }
+
+  if (loading) {
+    return (
+      <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
+        <h2>Loading...</h2>
       </main>
     );
   }

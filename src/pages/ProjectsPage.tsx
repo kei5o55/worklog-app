@@ -3,13 +3,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { NewProjectInput } from "../components/CreateProjectModal";
 import CreateProjectModal from "../components/CreateProjectModal";
-import { loadProjects, saveProjects, clearProjects, loadSessions } from "../logic/storage";
-import type { Project } from "../logic/types";
+import type { Project,Commit,WorkSession } from "../logic/types";
 import ContributionHeatmap from "../components/ContributionHeatmap";
-import { loadCommits } from "../logic/storage";
-import ScheduleCalendar from "../components/ScheduleCalendar";
-import CalendarPage from "./CalendarPage";//　一旦ProjectsPageから直接CalendarPageを呼び出す形にしてみる（再レンダリングの挙動を見たいので）
 import CalendarBoard from "../components/CalendarBoard";
+import {loadProjectsIdb,saveProjectsIdb,loadCommitsIdb,loadSessionsIdb,} from "../logic/storage-idb";//idb用
 
 
 
@@ -35,48 +32,43 @@ function daysUntil(dueDate: string) {
 
 export default function ProjectsPage() {
 
-    const [projects, setProjects] = useState<Project[]>(() => {
-        const loaded = loadProjects();
-        if (loaded.length > 0) return loaded;
-        return [
-            {
-            id: "p1",
-            name: "NARAKU",
-            memo: "仮プロジェクト（後で消してOK）",
-            createdAt: Date.now(),
-            },
-        ];
-        });
-
-        useEffect(() => {
-        saveProjects(projects);
-    }, [projects]);
+    const [projects, setProjects] = useState<Project[]>([]);
+    const [commitsAll, setCommitsAll] = useState<Commit[]>([]);
+    const [loading, setLoading] = useState(true);
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [newproject, setNewProject] = useState<Project | null>(null);
-    const [commitsAll, setCommitsAll] = useState(() => loadCommits());
-    const [sessionsAll, setSessionsAll] = useState(() => loadSessions());
+    const [sessionsAll, setSessionsAll] = useState<WorkSession[]>([]);
 
-    // 変更のたびに永続化
+    const refresh = async () => {
+      const [nextProjects, nextCommits, nextSessions] = await Promise.all([
+        loadProjectsIdb(),
+        loadCommitsIdb(),
+        loadSessionsIdb(),
+      ]);
+
+      setProjects(nextProjects);
+      setCommitsAll(nextCommits);
+      setSessionsAll(nextSessions);
+    };
+
     useEffect(() => {
-        saveProjects(projects);
-    }, [projects]);
-
-    useState(() => loadProjects());
-
+      void (async () => {
+        setLoading(true);
+        await refresh();
+        setLoading(false);
+      })();
+    }, []);
     
     useEffect(() => {
       const onFocus = () => {
-        setCommitsAll(loadCommits());
-        setSessionsAll(loadSessions());
+        void refresh();
       };
       window.addEventListener("focus", onFocus);
       return () => window.removeEventListener("focus", onFocus);
     }, []);
     
-    
-
     
   const sorted = useMemo(() => {
     const copy = [...projects];
@@ -95,7 +87,7 @@ export default function ProjectsPage() {
     return copy;
   }, [projects]);
 
-  const onCreate = (input: NewProjectInput) => {
+  const onCreate = async (input: NewProjectInput) => {
     const name = input.name.trim();
     if (!name) return;
 
@@ -130,19 +122,20 @@ export default function ProjectsPage() {
       createdAt: Date.now(),
     };
 
-    setProjects((prev) => [p, ...prev]);
+    const nextProjects = [p, ...projects];
+    setProjects(nextProjects);
+    await saveProjectsIdb(nextProjects);
     setIsCreateOpen(false);
   };
-
   
-
-  const onDelete = (id: string) => {
-    // 表示ラベルだけ先に確定
+  const onDelete = async (id: string) => {
     const target = projects.find((p) => p.id === id);
     const label = target ? `「${target.name}」` : "このプロジェクト";
     if (!confirm(`${label}を削除します。よろしいですか？`)) return;
 
-    setProjects((prev) => prev.filter((p) => p.id !== id));
+    const nextProjects = projects.filter((p) => p.id !== id);
+    setProjects(nextProjects);
+    await saveProjectsIdb(nextProjects);
   };
 
   return (
@@ -158,15 +151,19 @@ export default function ProjectsPage() {
       </header>
 
       <p style={{ color: "#666", marginTop: 8 }}>
-        ※ localStorage に保存されます（リロードしても残る）
+        ※ indexedDB に保存されます（リロードしても残る）
       </p>
 
       <section style={{ marginTop: 16 }}>
-        {sorted.length === 0 ? (
-          <div style={{ border: "1px dashed #bbb", borderRadius: 12, padding: 16, color: "#777" }}>
-            まだプロジェクトがありません。「+ 新規プロジェクト」から作成。
-          </div>
-        ) : (
+          {loading ? (
+            <div style={{ border: "1px dashed #bbb", borderRadius: 12, padding: 16, color: "#777" }}>
+              Loading...
+            </div>
+          ) : sorted.length === 0 ? (
+            <div style={{ border: "1px dashed #bbb", borderRadius: 12, padding: 16, color: "#777" }}>
+              まだプロジェクトがありません。「+ 新規プロジェクト」から作成。
+            </div>
+          ) : (
           <div style={{ display: "grid", gap: 12 }}>
             {sorted.map((p) => {
               const due = p.dueDate?.trim() ? p.dueDate.trim() : "";
