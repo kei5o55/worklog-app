@@ -4,8 +4,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { DraftCommit } from "../components/CommitModal";
 import CommitModal from "../components/CommitModal";
 import { useNavigate, useParams } from "react-router-dom";
-import { loadSessions, saveSessions, addCommit, loadProjects ,loadCommits} from "../logic/storage";
-import type { TimerMode, WorkSession } from "../logic/types";
+import {
+    loadSessionsIdb,
+    saveSessionsIdb,
+    loadProjectsIdb,
+    loadCommitsIdb,
+    addCommitIdb,
+} from "../logic/storage-idb";//idb用
+import type { Project, TimerMode, WorkSession } from "../logic/types";
 
 function pad2(n: number) {
     return String(n).padStart(2, "0");
@@ -34,13 +40,15 @@ function uid() {
 }
 
 export default function TimerPage() {
-    const [sessions, setSessions] = useState<WorkSession[]>(() => loadSessions());
+    const [sessions, setSessions] = useState<WorkSession[]>([]);
+    const [projects, setProjects] = useState<Project[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [loadedOnce, setLoadedOnce] = useState(false);
     const [pomodoroEnabled, setPomodoroEnabled] = useState(false);
     const [phase, setPhase] = useState<TimerMode>("idle");
     const [phaseStartedAt, setPhaseStartedAt] = useState<number | null>(null);
     const [completedPomodoros, setCompletedPomodoros] = useState(0);
     const [phasePausedAt, setPhasePausedAt] = useState<number | null>(null);
-    const projects = useMemo(() => loadProjects(), []);
     const { projectId } = useParams();
 
     // いまは仮。将来は projectId からプロジェクト名を引く
@@ -49,13 +57,32 @@ export default function TimerPage() {
         return projects.find((p) => p.id === projectId) ?? null;
     }, [projectId, projects]);
 
-    if (!selectedProject) {
-        return (
-            <main style={{ padding: 24 }}>
-            <h2>Project not found</h2>
-            </main>
-        );
-    }
+    useEffect(() => {//初回ロード用
+        let cancelled = false;
+
+        async function init() {
+            try {
+                const [loadedProjects, loadedSessions] = await Promise.all([
+                    loadProjectsIdb(),
+                    loadSessionsIdb(),
+                ]);
+
+                if (cancelled) return;
+
+                setProjects(loadedProjects);
+                setSessions(loadedSessions);
+                setLoadedOnce(true);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        }
+
+        void init();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const projectSessions = useMemo(
         () => sessions.filter((s) => s.projectId === projectId),
@@ -79,8 +106,8 @@ export default function TimerPage() {
     const [isCommitOpen, setIsCommitOpen] = useState(false);
 
     const navigate = useNavigate();
-    const pomodoroWorkMs = (selectedProject.pomodoroWorkMinutes ?? 25) * 60 * 1000;
-    const pomodoroBreakMs = (selectedProject.pomodoroBreakMinutes ?? 5) * 60 * 1000;
+    const pomodoroWorkMs = (selectedProject?.pomodoroWorkMinutes ?? 25) * 60 * 1000;
+    const pomodoroBreakMs = (selectedProject?.pomodoroBreakMinutes ?? 5) * 60 * 1000;
 
     // 表示用の現在時刻（runningのときだけ更新）
     const [now, setNow] = useState<number>(() => Date.now());
@@ -115,8 +142,9 @@ export default function TimerPage() {
 
     // sessionsが変わったら永続化
     useEffect(() => {
-        saveSessions(sessions);
-    }, [sessions]);
+        if (!loadedOnce) return;
+        void saveSessionsIdb(sessions);
+    }, [sessions, loadedOnce]);
 
     // runningのときだけ時刻更新（表示更新）
     useEffect(() => {
@@ -124,8 +152,6 @@ export default function TimerPage() {
         const id = window.setInterval(() => setNow(Date.now()), 250);
         return () => window.clearInterval(id);
     }, [running]);
-
-    
 
     // 経過時間（pausedならpausedAtで止める）
     const currentElapsedMs = useMemo(() => {
@@ -253,6 +279,8 @@ export default function TimerPage() {
     };
 
     const start = () => {
+        if (!selectedProject) return;
+
         const nowTs = Date.now();
         setNow(nowTs);
 
@@ -270,8 +298,8 @@ export default function TimerPage() {
         startWithProject(selectedProject.id);
     };
     
-    const stop = () => {
-        if (!activeSession) return;
+    const stop = async () => {
+        if (!activeSession || !selectedProject) return;
 
         setPhase("idle");
         setPhaseStartedAt(null);
@@ -280,18 +308,17 @@ export default function TimerPage() {
         const endedAt = Date.now();
         const effectiveEnd =
             activeSession.status === "paused"
-            ? activeSession.pausedAt ?? endedAt
-            : endedAt;
+                ? activeSession.pausedAt ?? endedAt
+                : endedAt;
 
         const durationMs = effectiveEnd - activeSession.startedAt;
 
-        const allCommits = loadCommits();
+        const allCommits = await loadCommitsIdb();
         const projectCommits = allCommits
             .filter((c) => c.projectId === selectedProject.id)
             .sort((a, b) => b.endedAt - a.endedAt);
 
         const commitNumber = projectCommits.length + 1;
-
         const projectTotalMs = sumMs(projectCommits) + durationMs;
 
         const todayTotalMs =
@@ -385,6 +412,22 @@ export default function TimerPage() {
             )
         );
     };
+
+    if (loading) {
+        return (
+            <main style={{ padding: 24 }}>
+                <h2>Loading...</h2>
+            </main>
+        );
+    }
+
+    if (!selectedProject) {
+        return (
+            <main style={{ padding: 24 }}>
+                <h2>Project not found</h2>
+            </main>
+        );
+    }
 
     return (
         
@@ -623,11 +666,10 @@ export default function TimerPage() {
                     // ここは好みで「元の状態に戻す（RUNNINGにする）」でもOK
                     finalizeAndClose();
                 }}
-                onSave={() => {
+                onSave={async () => {
                     if (!draftCommit || !projectId) return;
 
-                    // commitsに保存（プロジェクト画面で読む用）
-                    addCommit({
+                    await addCommitIdb({
                         id: uid(),
                         projectId,
                         startedAt: draftCommit.startedAt,
@@ -636,16 +678,14 @@ export default function TimerPage() {
                         note: draftCommit.note,
                     });
 
-                    // sessions側も終了で確定（履歴に残す）
                     finalizeStopSession();
-
                     finalizeAndClose();
                     navigate("/projects");
                 }}
-                onSaveAndContinue={() => {
+                onSaveAndContinue={async () => {
                     if (!draftCommit || !projectId) return;
 
-                    addCommit({
+                    await addCommitIdb({
                         id: uid(),
                         projectId,
                         startedAt: draftCommit.startedAt,
@@ -656,8 +696,6 @@ export default function TimerPage() {
 
                     finalizeStopSession();
                     finalizeAndClose();
-
-                    // 次を即開始（同じproject）
                     startWithProject(projectId);
                 }}
             />
