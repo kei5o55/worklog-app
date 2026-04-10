@@ -151,7 +151,7 @@ export default function ProjectsPage() {
       </header>
 
       <p style={{ color: "#666", marginTop: 8 }}>
-        ※ localStorage に保存されます（リロードしても残る）
+        ※ indexedDB に保存されます（リロードしても残る）
       </p>
 
       <section style={{ marginTop: 16 }}>
