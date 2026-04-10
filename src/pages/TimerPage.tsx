@@ -339,6 +339,7 @@ export default function TimerPage() {
             todayTotalMs,
             projectTotalMs,
             recentNotes,
+            image: null,
         };
 
         setDraftCommit(draft);
@@ -676,6 +677,14 @@ export default function TimerPage() {
                         endedAt: draftCommit.endedAt,
                         durationMs: draftCommit.endedAt - draftCommit.startedAt,
                         note: draftCommit.note,
+                        image: draftCommit.image
+                            ? {
+                                name: draftCommit.image.name,
+                                type: draftCommit.image.type,
+                                size: draftCommit.image.size,
+                                blob: draftCommit.image.file,
+                            }
+                            : null,
                     });
 
                     finalizeStopSession();
@@ -692,6 +701,14 @@ export default function TimerPage() {
                         endedAt: draftCommit.endedAt,
                         durationMs: draftCommit.endedAt - draftCommit.startedAt,
                         note: draftCommit.note,
+                        image: draftCommit.image
+                            ? {
+                                name: draftCommit.image.name,
+                                type: draftCommit.image.type,
+                                size: draftCommit.image.size,
+                                blob: draftCommit.image.file,
+                            }
+                            : null,
                     });
 
                     finalizeStopSession();
