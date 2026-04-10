@@ -83,6 +83,10 @@ export default function ProjectDetailPage() {
         .sort((a, b) => b.endedAt - a.endedAt);
     }, [commitsAll, projectId]);
 
+    const commitsWithImage = useMemo(() => {
+      return commits.filter((c) => c.image?.blob);
+    }, [commits]);
+
     const totalMs = useMemo(() => commits.reduce((sum, c) => sum + c.durationMs, 0), [commits]);
     
     if (!projectId) {
@@ -299,13 +303,55 @@ export default function ProjectDetailPage() {
         ) : null}
       </div>
     </section>
-
       {/* 下：ギャラリー（仮） */}
         <section style={{ marginTop: 20 }}>
             <h2 style={{ fontSize: 16 }}>Gallery（仮）</h2>
-            <div style={{ border: "1px dashed #bbb", borderRadius: 12, padding: 16, color: "#777" }}>
-                画像がまだありません（ここに進捗画像が並びます）
-            </div>
+              {commitsWithImage.length === 0 ? (
+                <div style={{ border: "1px dashed #bbb", borderRadius: 12, padding: 16, color: "#777" }}>
+                  画像がまだありません（ここに進捗画像が並びます）
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+                    gap: 10,
+                  }}
+                >
+                  {commitsWithImage.map((c) => {
+                    const url = URL.createObjectURL(c.image!.blob);
+
+                    return (
+                      <div
+                        key={c.id}
+                        style={{
+                          border: "1px solid #ddd",
+                          borderRadius: 10,
+                          padding: 6,
+                        }}
+                      >
+                        <Link to={`/projects/${projectId}/commits/${c.id}`}>
+                          <img
+                            src={url}
+                            alt="commit image"
+                            style={{
+                              width: "100%",
+                              height: 100,
+                              objectFit: "cover",
+                              borderRadius: 6,
+                              display: "block",
+                            }}
+                          />
+                        </Link>
+
+                        <div style={{ fontSize: 11, color: "#666", marginTop: 4 }}>
+                          {new Date(c.endedAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
         </section>
     
     </main>
