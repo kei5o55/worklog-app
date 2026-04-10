@@ -3,7 +3,7 @@
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { loadProjectsIdb, loadCommitsIdb,saveProjectsIdb } from "../logic/storage-idb";
-import { loadProjects, loadCommits, saveProjects, } from "../logic/storage";
+//import { loadProjects, loadCommits, saveProjects, } from "../logic/storage";
 import type { Project, Commit } from "../logic/types";
 
 
@@ -60,31 +60,21 @@ export default function ProjectDetailPage() {
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, []);
-
-  //idbの初期化テスト
-  useEffect(() => {
-    (async () => {
-      console.log("IDB test start");
-
-      await saveProjectsIdb([
-        {
-          id: "test",
-          name: "IndexedDB test",
-          createdAt: Date.now(),
-        },
-      ]);
-
-      const data = await loadProjectsIdb();
-      console.log("IDB data:", data);
-    })();
-  }, []);
-
   
-
     const project = useMemo(() => {
       if (!projectId) return null;
       return projects.find((p) => p.id === projectId) ?? null;
     }, [projects, projectId]);
+
+    useEffect(() => {
+      if (!project) return;
+      setWorkMinutesInput(
+        project.pomodoroWorkMinutes ? String(project.pomodoroWorkMinutes) : ""
+      );
+      setBreakMinutesInput(
+        project.pomodoroBreakMinutes ? String(project.pomodoroBreakMinutes) : ""
+      );
+    }, [project]);
 
     const commits = useMemo(() => {
       if (!projectId) return [];
@@ -93,6 +83,8 @@ export default function ProjectDetailPage() {
         .sort((a, b) => b.endedAt - a.endedAt);
     }, [commitsAll, projectId]);
 
+    const totalMs = useMemo(() => commits.reduce((sum, c) => sum + c.durationMs, 0), [commits]);
+    
     if (!projectId) {
       return (
         <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
@@ -120,15 +112,7 @@ export default function ProjectDetailPage() {
       );
     }
 
-  useEffect(() => {
-    if (!project) return;
-    setWorkMinutesInput(
-      project.pomodoroWorkMinutes ? String(project.pomodoroWorkMinutes) : ""
-    );
-    setBreakMinutesInput(
-      project.pomodoroBreakMinutes ? String(project.pomodoroBreakMinutes) : ""
-    );
-  }, [project]);
+
 
   const handleSavePomodoroSettings = () => {
     if (!project) return;
@@ -153,10 +137,10 @@ export default function ProjectDetailPage() {
     );
 
     setProjects(nextProjects);
-    saveProjects(nextProjects);
+    saveProjectsIdb(nextProjects);
   };
 
-    const totalMs = useMemo(() => commits.reduce((sum, c) => sum + c.durationMs, 0), [commits]);
+    
     const targetMs = project.targetHours ? project.targetHours * 60 * 60 * 1000 : null;
     const ratio = targetMs ? Math.min(1, totalMs / targetMs) : null;
     const percent = ratio != null ? Math.floor(ratio * 100) : null;
