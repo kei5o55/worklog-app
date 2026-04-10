@@ -339,6 +339,7 @@ export default function TimerPage() {
             todayTotalMs,
             projectTotalMs,
             recentNotes,
+            image: null,
         };
 
         setDraftCommit(draft);

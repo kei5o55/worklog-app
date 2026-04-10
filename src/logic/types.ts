@@ -36,13 +36,21 @@ export type WorkSession = {
     pausedAt?: number;
 };
 
+export type CommitImage = {
+    name: string;
+    type: string;
+    size: number;
+    blob: Blob;
+};
+
 export type Commit = {
     id: string;
-    projectId: ProjectId;
+    projectId: string;
     startedAt: number;
     endedAt: number;
     durationMs: number;
-    note: string;
+    note?: string;
+    image?: CommitImage | null;
 };
 
 // 日付セルに置く個人メモ
