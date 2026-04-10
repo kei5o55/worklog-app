@@ -62,6 +62,39 @@ export default function CommitModal({
 
     if (!open || !draft) return null;
 
+    async function compressImage(file: File): Promise<File> {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+
+        await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+            img.src = url;
+        });
+
+        const maxWidth = 1280; // 横幅制限
+        const scale = Math.min(1, maxWidth / img.width);
+
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("Canvas not supported");
+
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        const blob: Blob = await new Promise((resolve) =>
+            canvas.toBlob((b) => resolve(b!), "image/jpeg", 0.8) // 画質80%
+        );
+
+        URL.revokeObjectURL(url);
+
+        return new File([blob], file.name, {
+            type: "image/jpeg",
+        });
+    }
+
     return (
         <div
             role="dialog"
@@ -124,7 +157,7 @@ export default function CommitModal({
                     <input
                         type="file"
                         accept="image/*"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (!file) return;
 
@@ -133,10 +166,7 @@ export default function CommitModal({
                                 return;
                             }
 
-                            if (file.size > 5 * 1024 * 1024) {
-                                alert("5MB以下の画像を選択してください");
-                                return;
-                            }
+                            const compressed = await compressImage(file);
 
                             if (draft.image?.previewUrl) {
                                 URL.revokeObjectURL(draft.image.previewUrl);
@@ -145,11 +175,11 @@ export default function CommitModal({
                             onChange({
                                 ...draft,
                                 image: {
-                                    name: file.name,
-                                    type: file.type,
-                                    size: file.size,
-                                    file,
-                                    previewUrl: URL.createObjectURL(file),
+                                    name: compressed.name,
+                                    type: compressed.type,
+                                    size: compressed.size,
+                                    file: compressed,
+                                    previewUrl: URL.createObjectURL(compressed),
                                 },
                             });
 
