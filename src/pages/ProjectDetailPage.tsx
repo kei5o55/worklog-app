@@ -28,6 +28,7 @@ export default function ProjectDetailPage() {
   const [loading, setLoading] = useState(true);
   const [workMinutesInput, setWorkMinutesInput] = useState("");
   const [breakMinutesInput, setBreakMinutesInput] = useState("");
+  const [projectMemoInput, setProjectMemoInput] = useState("");
 
   /*const refresh = () => {
     setProjects(loadProjects());
@@ -74,6 +75,7 @@ export default function ProjectDetailPage() {
       setBreakMinutesInput(
         project.pomodoroBreakMinutes ? String(project.pomodoroBreakMinutes) : ""
       );
+      setProjectMemoInput(project.memo ?? "");
     }, [project]);
 
     const commits = useMemo(() => {
@@ -144,6 +146,24 @@ export default function ProjectDetailPage() {
     saveProjectsIdb(nextProjects);
   };
 
+  const handleSaveProjectMemo = () => {
+    if (!project) return;
+
+    const trimmed = projectMemoInput.trim();
+
+    const nextProjects = projects.map((p) =>
+      p.id === project.id
+        ? {
+            ...p,
+            memo: trimmed ? trimmed : undefined,
+          }
+        : p
+    );
+
+    setProjects(nextProjects);
+    void saveProjectsIdb(nextProjects);
+  };
+
     
     const targetMs = project.targetHours ? project.targetHours * 60 * 60 * 1000 : null;
     const ratio = targetMs ? Math.min(1, totalMs / targetMs) : null;
@@ -175,9 +195,33 @@ export default function ProjectDetailPage() {
         <div>コミット回数：{commits.length}</div>
         <div>累計時間：{formatMs(totalMs)}</div>
         {project.dueDate?.trim() ? <div>納期：{project.dueDate}</div> : null}
-        {project.memo?.trim() ? (
-          <div style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>{project.memo}</div>
-        ) : null}
+      </section>
+
+      <section style={{ marginTop: 16, border: "1px solid #ddd", borderRadius: 12, padding: 12 }}>
+        <h2 style={{ fontSize: 16, marginTop: 0 }}>プロジェクトメモ</h2>
+
+        <textarea
+          value={projectMemoInput}
+          onChange={(e) => setProjectMemoInput(e.target.value)}
+          rows={5}
+          placeholder="このプロジェクトの方針・メモ・やることなど"
+          style={{
+            width: "100%",
+            padding: 10,
+            borderRadius: 10,
+            border: "1px solid #ddd",
+            resize: "vertical",
+          }}
+        />
+
+        <div style={{ marginTop: 8 }}>
+          <button
+            onClick={handleSaveProjectMemo}
+            style={{ padding: "8px 12px", borderRadius: 10 }}
+          >
+            保存
+          </button>
+        </div>
       </section>
 
       {/* 中：履歴 */}
