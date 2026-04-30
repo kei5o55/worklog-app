@@ -16,11 +16,11 @@ function uid() {
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function normalizeProject(p: Project): Project {
+/*function normalizeProject(p: Project): Project {
   const due = p.dueDate?.trim() ? p.dueDate.trim() : undefined;
   const memo = p.memo?.trim() ? p.memo.trim() : undefined;
   return { ...p, dueDate: due, memo };
-}
+}*/
 
 function daysUntil(dueDate: string) {
   const [y, m, d] = dueDate.split("-").map(Number);
@@ -37,8 +37,8 @@ export default function ProjectsPage() {
     const [loading, setLoading] = useState(true);
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
-    const [selectedDate, setSelectedDate] = useState<string | null>(null);
-    const [newproject, setNewProject] = useState<Project | null>(null);
+    //const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    //const [newproject, setNewProject] = useState<Project | null>(null);
     const [sessionsAll, setSessionsAll] = useState<WorkSession[]>([]);
 
     const refresh = async () => {

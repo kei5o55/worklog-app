@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import  { useMemo, useState } from "react";
 import type { Commit } from "../logic/types";
 
 type Mode = "last365" | "year";
