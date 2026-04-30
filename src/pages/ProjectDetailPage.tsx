@@ -183,9 +183,7 @@ export default function ProjectDetailPage() {
         <h1 style={{ margin: 0 }}>{project.name}</h1>
 
         <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
-          <button onClick={refresh} style={{ padding: "6px 10px", borderRadius: 10 }}>
-            更新
-          </button>
+          <Link to={`/projects/`}>← 戻る</Link>
           <Link to={`/projects/${projectId}/timer`}>作業する</Link>
         </div>
       </div>

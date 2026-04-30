@@ -108,7 +108,7 @@ export default function CommitDetailPage() {
         <div style={{ color: "#666", fontSize: 12 }}>{project.name}</div>
 
         <div style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
-          <Link to={`/projects/${projectId}`}>← Project</Link>
+          <Link to={`/projects/${projectId}`}>← 戻る</Link>
           <Link to={`/projects/${projectId}/timer`}>作業する</Link>
         </div>
       </div>
