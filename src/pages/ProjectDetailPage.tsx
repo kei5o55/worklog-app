@@ -169,7 +169,7 @@ export default function ProjectDetailPage() {
     const ratio = targetMs ? Math.min(1, totalMs / targetMs) : null;
     const percent = ratio != null ? Math.floor(ratio * 100) : null;
     const pomodoroWorkMinutes = project.pomodoroWorkMinutes ?? null;
-    const pomodoroBreakMinutes = project.pomodoroBreakMinutes ?? null;
+    //const pomodoroBreakMinutes = project.pomodoroBreakMinutes ?? null;
     
 
     const estimatedPomodoroCount =

@@ -45,7 +45,7 @@
 .nav-button {
   all: unset; /* デフォルトのボタン装飾をリセット */
   display: inline-flex;
-  alignItems: center;
+  align-items: center;
   justify-content: center;
   width: 32px;
   height: 32px;
