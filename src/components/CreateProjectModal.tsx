@@ -94,7 +94,7 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="例：関西コミティア新刊 / MISORIA画集"
+              placeholder="例：COMITIA新刊"
               style={{
                 width: "100%",
                 padding: 10,
