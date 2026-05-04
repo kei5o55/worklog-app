@@ -70,22 +70,44 @@ export default function ProjectsPage() {
     }, []);
     
     
-  const sorted = useMemo(() => {
-    const copy = [...projects];
+    const sorted = useMemo(() => {
+      const copy = [...projects];
 
-    // 納期あり→近い順、納期なし→最後、同条件なら新しい順
-    copy.sort((a, b) => {
-      const ad = a.dueDate?.trim() ? a.dueDate.trim() : "";
-      const bd = b.dueDate?.trim() ? b.dueDate.trim() : "";
+      // 納期あり→近い順、納期なし→最後、同条件なら新しい順
+      copy.sort((a, b) => {
+        const ad = a.dueDate?.trim() ? a.dueDate.trim() : "";
+        const bd = b.dueDate?.trim() ? b.dueDate.trim() : "";
 
-      if (ad && bd) return ad.localeCompare(bd);
-      if (ad && !bd) return -1;
-      if (!ad && bd) return 1;
-      return b.createdAt - a.createdAt;
-    });
+        if (ad && bd) return ad.localeCompare(bd);
+        if (ad && !bd) return -1;
+        if (!ad && bd) return 1;
+        return b.createdAt - a.createdAt;
+      });
 
-    return copy;
-  }, [projects]);
+      return copy;
+    }, [projects]);
+
+    const latestCommitMap = useMemo(() => {
+                  const map = new Map<string, Commit>();
+
+                  for (const c of commitsAll) {
+                    const prev = map.get(c.projectId);
+
+                    // 画像付き優先
+                    if (c.image?.blob) {
+                      if (!prev || prev.endedAt < c.endedAt) {
+                        map.set(c.projectId, c);
+                      }
+                    }
+                  }
+
+                  return map;
+    }, [commitsAll]);
+
+    function getImageUrl(commit: Commit) {
+      if (!commit.image?.blob) return null;
+      return URL.createObjectURL(commit.image.blob);
+    }
 
   const onCreate = async (input: NewProjectInput) => {
     const name = input.name.trim();
@@ -168,6 +190,8 @@ export default function ProjectsPage() {
             {sorted.map((p) => {
               const due = p.dueDate?.trim() ? p.dueDate.trim() : "";
               const remain = due ? daysUntil(due) : null;
+              const latest = latestCommitMap.get(p.id);
+              const imageUrl = latest ? getImageUrl(latest) : null;
               const activeSession = sessionsAll.find(
                 (s) => s.projectId === p.id && s.endedAt == null
               );
@@ -243,13 +267,31 @@ export default function ProjectsPage() {
                       削除
                     </button>
                   </div>
-
-                  {p.memo ? (
-                    <div style={{ color: "#333", whiteSpace: "pre-wrap" }}>{p.memo}</div>
-                  ) : (
-                    <div style={{ color: "#999" }}>（メモなし）</div>
-                  )}
-
+                    <div style={{ display: "flex", gap: 12 }}>
+                      {p.memo ? (
+                        <div style={{ color: "#333", whiteSpace: "pre-wrap" }}>{p.memo}</div>
+                      ) : (
+                        <div style={{ color: "#999" }}>（メモなし）</div>
+                      )}
+                      {imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt="latest commit"
+                          style={{
+                            maxHeight: 180,
+                            marginLeft: "auto",
+                            objectFit: "cover",
+                            borderRadius: 10,
+                            border: "1px solid #ddd",
+                          }}
+                        />
+                      ) : (
+                        <div style={{ color: "#aaa", fontSize: 12 }}>
+                          （画像なし）
+                        </div>
+                      )}
+                    </div>
+                  
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                     <Link to={`/projects/${p.id}`} style={{ padding: "8px 10px" }}>
                       詳細
