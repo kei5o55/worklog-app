@@ -55,6 +55,7 @@ export default function CalendarDayDetail({ cell, projects, onAddMemo, onDeleteM
         cell.commits.length > 0;
 
     const groupedCommits = groupCommitsByProject(cell, projects);
+    const hours = Array.from({ length: 24 }, (_, i) => i);
 
     return (
         <section style={styles.wrapper}>
@@ -135,9 +136,26 @@ export default function CalendarDayDetail({ cell, projects, onAddMemo, onDeleteM
                             </div>
                         )}
                     </div>
+                    
                 </>
             )}
+            <div style={styles.section}>
+                        <h4 style={styles.sectionTitle}>タイムライン</h4>
+
+                        <div style={styles.timeline}>
+                            {hours.map((hour) => (
+                                <div key={hour} style={styles.timelineRow}>
+                                    <div style={styles.timelineHour}>
+                                        {hour.toString().padStart(2, "0")}:00
+                                    </div>
+
+                                    <div style={styles.timelineContent}></div>
+                                </div>
+                            ))}
+                        </div>
+            </div>
         </section>
+        
     );
 }
 

@@ -60,6 +60,22 @@ export type CalendarMemo = {
     text: string;
     createdAt: number;
 };
+export type DaySchedule = {
+    id: string;
+    date: string; // YYYY-MM-DD
+
+    title: string;
+
+    startHour: number; // 0~23
+    startMinute: number;
+
+    endHour: number;
+    endMinute: number;
+
+    color?: string;
+
+    projectId?: string;
+};
 
 // カレンダー描画用に組み立てたセルデータ
 export type CalendarCell = {
@@ -70,4 +86,5 @@ export type CalendarCell = {
     dueProjects: Project[];   // 納期がその日のプロジェクト
     memos: CalendarMemo[];
     commits: Commit[];
+    schedules: DaySchedule[];
 };
