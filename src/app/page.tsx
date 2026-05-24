@@ -1,3 +1,7 @@
 export default function HomePage() {
-  return <h1>Next.js 移行中...！</h1>;
+  return (
+    <h1 className="text-4xl font-bold text-sky-400 animate-bounce">
+        Tailwind CSS 導入完了！
+      </h1>
+  );
 }
