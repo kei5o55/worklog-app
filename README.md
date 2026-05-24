@@ -47,6 +47,10 @@ https://worklog-app-ruby.vercel.app/projects
 
 のように単純な操作でプロジェクトの進行を記録できる
 
+## 想定ユーザー
+- クリエイター
+- 学生
+
 ## 技術スタック
 - React
 - TypeScript
