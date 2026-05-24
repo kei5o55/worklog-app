@@ -3,17 +3,24 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "scripts": {
+  "scripts_vite": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
   "dependencies": {
     "@tanstack/react-query": "^5.90.21",
     "idb": "^8.0.3",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "next": "^16.2.6",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "react-router-dom": "^7.13.1"
   },
   "devDependencies": {
