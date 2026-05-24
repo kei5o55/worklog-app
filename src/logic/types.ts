@@ -86,5 +86,5 @@ export type CalendarCell = {
     dueProjects: Project[];   // 納期がその日のプロジェクト
     memos: CalendarMemo[];
     commits: Commit[];
-    schedules: DaySchedule[];
+    schedules?: DaySchedule[];
 };
