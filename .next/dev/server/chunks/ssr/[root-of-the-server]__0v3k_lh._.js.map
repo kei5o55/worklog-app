@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 10, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/komak/Desktop/github/worklog-app/src/app/page.tsx"],"sourcesContent":["export default function HomePage() {\r\n  return <h1>Next.js 移行中...！</h1>;\r\n}"],"names":["HomePage"],"mappings":";;;;;;AAAe,SAASA;IACtB,qBAAO,8OAAC;kBAAG;;;;;;AACb"}}]
-}
