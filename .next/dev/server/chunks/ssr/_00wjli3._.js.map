@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/komak/Desktop/github/worklog-app/src/app/layout.tsx"],"sourcesContent":["export default function RootLayout({ children }: {children: React.ReactNode}){\r\n    return (\r\n        <html lang=\"ja\">\r\n            <body>\r\n                {children}\r\n            </body>\r\n        </html>\r\n    );\r\n}"],"names":["RootLayout","children","lang"],"mappings":";;;;;;AAAe,SAASA,WAAW,EAAEC,QAAQ,EAA+B;IACxE,qBACI,8OAAC;QAAKC,MAAK;kBACP,cAAA,8OAAC;sBACID;;;;;;;;;;;AAIjB"}},
+    {"offset": {"line": 34, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/komak/Desktop/github/worklog-app/node_modules/next/src/server/route-modules/app-page/vendored/rsc/react-jsx-dev-runtime.ts"],"sourcesContent":["module.exports = (\n  require('../../module.compiled') as typeof import('../../module.compiled')\n).vendored['react-rsc']!.ReactJsxDevRuntime\n"],"names":["module","exports","require","vendored","ReactJsxDevRuntime"],"mappings":"AAAAA,OAAOC,OAAO,GACZC,QAAQ,4HACRC,QAAQ,CAAC,YAAY,CAAEC,kBAAkB","ignoreList":[0]}}]
+}
