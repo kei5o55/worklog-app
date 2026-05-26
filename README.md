@@ -91,7 +91,8 @@ Githubを用いた開発を行っていると、コミット履歴のように�
 - 一覧表示
 - 削除（confirmあり）
 - Contextでアプリ全体共有
-  
+  <img width="1323" height="906" alt="Animation1" src="https://github.com/user-attachments/assets/0e87e769-cec4-4a3b-9432-7355587f33f9" />
+
 **2. タイマー機能**
 - Start / Pause / Resume / Stop
 - 画面離脱時自動Pause
@@ -114,13 +115,15 @@ Githubを用いた開発を行っていると、コミット履歴のように�
 - projectId単位で保存
 - 保存後 projects一覧へ遷移
 
+<img width="1323" height="906" alt="Animation2" src="https://github.com/user-attachments/assets/bd51844b-edbb-42d2-bcee-1a53bce19dab" />
+
 **5. スケジュールカレンダー機能**
 - 現在月のカレンダー表示
 - 日付ごとにセル化
   - コミット件数の表示
   - 作業ログの簡易表示
   - 簡易メモの表示
-
+<img width="1323" height="906" alt="Animation3" src="https://github.com/user-attachments/assets/007bad58-57cb-4bfc-87ee-99812a8567be" />
 
 ## 状態設計方針
 URLを正本とする
