@@ -1,10 +1,9 @@
 //src/pages/TimerPage.tsx
 // ここはタイマーのページ。作業時間の計測やコミットの保存などを行う
-
 "use client"
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { DraftCommit } from "../../components/CommitModal";
-import CommitModal from "../../components/CommitModal";
+import type { DraftCommit } from "../../../components/CommitModal";
+import CommitModal from "../../../components/CommitModal";
 import { useNavigate, useParams } from "react-router-dom";
 import Link from "next/link"
 import {
@@ -13,8 +12,8 @@ import {
     loadProjectsIdb,
     loadCommitsIdb,
     addCommitIdb,
-} from "../../logic/storage-idb";//idb用
-import type { Project, TimerMode, WorkSession } from "../../logic/types";
+} from "../../../logic/storage-idb";//idb用
+import type { Project, TimerMode, WorkSession } from "../../..//logic/types";
 
 function pad2(n: number) {
     return String(n).padStart(2, "0");
@@ -691,7 +690,7 @@ export default function TimerPage() {
 
                     finalizeStopSession();
                     finalizeAndClose();
-                    <Link href="/"></Link>;
+                    <Link href="/"></Link>
                 }}
                 onSaveAndContinue={async () => {
                     if (!draftCommit || !projectId) return;
