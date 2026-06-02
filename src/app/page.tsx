@@ -2,7 +2,6 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import type { NewProjectInput } from "../components/CreateProjectModal";
 import CreateProjectModal from "../components/CreateProjectModal";
 import type { Project,Commit,WorkSession } from "../logic/types";
