@@ -9,6 +9,8 @@ import ContributionHeatmap from "../components/ContributionHeatmap";
 import CalendarBoard from "../components/CalendarBoard";
 import {loadProjectsIdb,saveProjectsIdb,loadCommitsIdb,loadSessionsIdb,} from "../logic/storage-idb";//idb用
 
+import Link from "next/link";
+
 
 
 function uid() {
@@ -181,6 +183,7 @@ export default function ProjectsPage() {
         <button
           onClick={() => setIsCreateOpen(true)}
           style={{ marginLeft: "auto", padding: "10px 14px", borderRadius: 10 }}
+          className="border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer"
         >
           + 新規プロジェクト
         </button>
@@ -276,6 +279,7 @@ export default function ProjectsPage() {
                         padding: "6px 10px",
                         borderRadius: 10,
                       }}
+                      className="border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer"
                       title="削除"
                     >
                       削除
@@ -306,14 +310,14 @@ export default function ProjectsPage() {
                       )}
                     </div>
                   
-                  {/*<div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    <Link to={`/projects/${p.id}`} style={{ padding: "8px 10px" }}>
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    <Link href="/project" className="border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg">
                       詳細
                     </Link>
-                    <Link to={`/projects/${p.id}/timer`} style={{ padding: "8px 10px" }}>
+                    <Link href="/timer" className="border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg">
                       作業する
                     </Link>
-                  </div>*/}
+                  </div>
                 </article>
               );
             })}
