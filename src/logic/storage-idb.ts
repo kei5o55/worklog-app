@@ -78,7 +78,26 @@ function normalizeCalendarMemo(memo: CalendarMemo): CalendarMemo {
     };
 }
 
-export const dbPromise = openDB<WorklogDB>(IDB_NAME, IDB_VERSION, {
+export const dbPromise = typeof window !== "undefined" 
+    ? openDB<WorklogDB>(IDB_NAME, IDB_VERSION, {
+        upgrade(db) {
+            if (!db.objectStoreNames.contains(STORE_NAMES.projects)) {
+            db.createObjectStore(STORE_NAMES.projects, { keyPath: "id" });
+            }
+            if (!db.objectStoreNames.contains(STORE_NAMES.sessions)) {
+            db.createObjectStore(STORE_NAMES.sessions, { keyPath: "id" });
+            }
+            if (!db.objectStoreNames.contains(STORE_NAMES.commits)) {
+            db.createObjectStore(STORE_NAMES.commits, { keyPath: "id" });
+            }
+            if (!db.objectStoreNames.contains(STORE_NAMES.calendarMemos)) {
+            db.createObjectStore(STORE_NAMES.calendarMemos, { keyPath: "id" });
+            }
+        },
+        })
+    : Promise.resolve(null as any);
+
+/*export const dbPromise = openDB<WorklogDB>(IDB_NAME, IDB_VERSION, {
     upgrade(db) {
         if (!db.objectStoreNames.contains(STORE_NAMES.projects)) {
         db.createObjectStore(STORE_NAMES.projects, { keyPath: "id" });
@@ -93,17 +112,19 @@ export const dbPromise = openDB<WorklogDB>(IDB_NAME, IDB_VERSION, {
         db.createObjectStore(STORE_NAMES.calendarMemos, { keyPath: "id" });
         }
     },
-});
+});*/
 
 // ===== Projects =====
 export async function loadProjectsIdb(): Promise<Project[]> {
     const db = await dbPromise;
+    if (!db) return [];
     const items = await db.getAll(STORE_NAMES.projects);
     return items.map(normalizeProject);
 }
 
 export async function saveProjectsIdb(projects: Project[]): Promise<void> {
     const db = await dbPromise;
+    if (!db) return ;
     const tx = db.transaction(STORE_NAMES.projects, "readwrite");
     await tx.store.clear();
     for (const project of projects.map(normalizeProject)) {
@@ -114,17 +135,20 @@ export async function saveProjectsIdb(projects: Project[]): Promise<void> {
 
 export async function clearProjectsIdb(): Promise<void> {
     const db = await dbPromise;
+    if (!db) return ;
     await db.clear(STORE_NAMES.projects);
 }
 
 // ===== Sessions =====
 export async function loadSessionsIdb(): Promise<WorkSession[]> {
     const db = await dbPromise;
+    if (!db) return [];
     return db.getAll(STORE_NAMES.sessions);
 }
 
 export async function saveSessionsIdb(sessions: WorkSession[]): Promise<void> {
     const db = await dbPromise;
+    if (!db) return ;
     const tx = db.transaction(STORE_NAMES.sessions, "readwrite");
     await tx.store.clear();
     for (const session of sessions) {
@@ -135,17 +159,20 @@ export async function saveSessionsIdb(sessions: WorkSession[]): Promise<void> {
 
 export async function clearSessionsIdb(): Promise<void> {
     const db = await dbPromise;
+    if (!db) return ;
     await db.clear(STORE_NAMES.sessions);
 }
 
 // ===== Commits =====
 export async function loadCommitsIdb(): Promise<Commit[]> {
     const db = await dbPromise;
+    if (!db) return [];
     return db.getAll(STORE_NAMES.commits);
 }
 
 export async function saveCommitsIdb(commits: Commit[]): Promise<void> {
     const db = await dbPromise;
+    if (!db) return ;
     const tx = db.transaction(STORE_NAMES.commits, "readwrite");
     await tx.store.clear();
     for (const commit of commits) {
@@ -156,11 +183,13 @@ export async function saveCommitsIdb(commits: Commit[]): Promise<void> {
 
 export async function addCommitIdb(commit: Commit): Promise<void> {
     const db = await dbPromise;
+    if (!db) return ;
     await db.put(STORE_NAMES.commits, commit);
 }
 
 export async function getCommitByIdIdb(commitId: string): Promise<Commit | null> {
     const db = await dbPromise;
+    if (!db) return null;
     return (await db.get(STORE_NAMES.commits, commitId)) ?? null;
 }
 
@@ -169,6 +198,7 @@ export async function getCommitIdb(
     commitId: string
 ): Promise<Commit | null> {
     const db = await dbPromise;
+    if (!db) return null;
     const commit = await db.get(STORE_NAMES.commits, commitId);
     if (!commit || commit.projectId !== projectId) return null;
     return commit;
@@ -176,18 +206,21 @@ export async function getCommitIdb(
 
 export async function clearCommitsIdb(): Promise<void> {
     const db = await dbPromise;
+    if (!db) return ;
     await db.clear(STORE_NAMES.commits);
 }
 
 // ===== Calendar Memos =====
 export async function loadCalendarMemosIdb(): Promise<CalendarMemo[]> {
     const db = await dbPromise;
+    if (!db) return [];
     const items = await db.getAll(STORE_NAMES.calendarMemos);
-    return items.map(normalizeCalendarMemo).filter((m) => m.date && m.text);
+    return items.map(normalizeCalendarMemo).filter((m: CalendarMemo) => m.date && m.text);
 }
 
 export async function saveCalendarMemosIdb(memos: CalendarMemo[]): Promise<void> {
     const db = await dbPromise;
+    if (!db) return ;
     const tx = db.transaction(STORE_NAMES.calendarMemos, "readwrite");
     await tx.store.clear();
     for (const memo of memos.map(normalizeCalendarMemo)) {
@@ -198,26 +231,31 @@ export async function saveCalendarMemosIdb(memos: CalendarMemo[]): Promise<void>
 
 export async function addCalendarMemoIdb(memo: CalendarMemo): Promise<void> {
     const db = await dbPromise;
+    if (!db) return ;
     await db.put(STORE_NAMES.calendarMemos, normalizeCalendarMemo(memo));
 }
 
 export async function updateCalendarMemoIdb(updated: CalendarMemo): Promise<void> {
     const db = await dbPromise;
+    if (!db) return ;
     await db.put(STORE_NAMES.calendarMemos, normalizeCalendarMemo(updated));
 }
 
 export async function deleteCalendarMemoIdb(memoId: string): Promise<void> {
     const db = await dbPromise;
+    if (!db) return ;
     await db.delete(STORE_NAMES.calendarMemos, memoId);
 }
 
 export async function clearCalendarMemosIdb(): Promise<void> {
     const db = await dbPromise;
+    if (!db) return ;
     await db.clear(STORE_NAMES.calendarMemos);
 }
 
 export async function clearAllStorageIdb(): Promise<void> {
     const db = await dbPromise;
+    if (!db) return ;
     const tx = db.transaction(
         [
         STORE_NAMES.projects,
