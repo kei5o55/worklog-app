@@ -56,10 +56,9 @@ export default function TimerPage({params}:{params: Promise<{id:string}>}) {
     const [phaseStartedAt, setPhaseStartedAt] = useState<number | null>(null);
     const [completedPomodoros, setCompletedPomodoros] = useState(0);
     const [phasePausedAt, setPhasePausedAt] = useState<number | null>(null);
-    //const { projectId } = useParams();
 
+    //Next.js15で、paramsが非同期になったからTimerPage({params}:...のとこをいじってこう。
     const resolvedParams=use(params);
-
     const projectId=resolvedParams.id;
 
     // いまは仮。将来は projectId からプロジェクト名を引く
@@ -433,7 +432,6 @@ export default function TimerPage({params}:{params: Promise<{id:string}>}) {
     }
 
     if (!selectedProject) {
-        console.log(test);
         return (
             <main style={{ padding: 24 }}>
                 
