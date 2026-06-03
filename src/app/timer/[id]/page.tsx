@@ -13,7 +13,12 @@ import {
     loadCommitsIdb,
     addCommitIdb,
 } from "../../../logic/storage-idb";//idb用
+import {use} from "react"
 import type { Project, TimerMode, WorkSession } from "../../..//logic/types";
+
+interface Props{
+    params:{id: string};
+}
 
 function pad2(n: number) {
     return String(n).padStart(2, "0");
@@ -41,7 +46,7 @@ function uid() {
         : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-export default function TimerPage() {
+export default function TimerPage({params}:{params: Promise<{id:string}>}) {
     const [sessions, setSessions] = useState<WorkSession[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
@@ -51,7 +56,11 @@ export default function TimerPage() {
     const [phaseStartedAt, setPhaseStartedAt] = useState<number | null>(null);
     const [completedPomodoros, setCompletedPomodoros] = useState(0);
     const [phasePausedAt, setPhasePausedAt] = useState<number | null>(null);
-    const { projectId } = useParams();
+    //const { projectId } = useParams();
+
+    const resolvedParams=use(params);
+
+    const projectId=resolvedParams.id;
 
     // いまは仮。将来は projectId からプロジェクト名を引く
     const selectedProject = useMemo(() => {
@@ -424,8 +433,10 @@ export default function TimerPage() {
     }
 
     if (!selectedProject) {
+        console.log(test);
         return (
             <main style={{ padding: 24 }}>
+                
                 <h2>Project not found</h2>
             </main>
         );
