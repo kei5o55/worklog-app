@@ -4,7 +4,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { DraftCommit } from "../../../components/CommitModal";
 import CommitModal from "../../../components/CommitModal";
-import { useNavigate, useParams } from "react-router-dom";
 import Link from "next/link"
 import {
     loadSessionsIdb,
@@ -15,10 +14,6 @@ import {
 } from "../../../logic/storage-idb";//idb用
 import {use} from "react"
 import type { Project, TimerMode, WorkSession } from "../../..//logic/types";
-
-interface Props{
-    params:{id: string};
-}
 
 function pad2(n: number) {
     return String(n).padStart(2, "0");
