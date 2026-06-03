@@ -1,12 +1,13 @@
 //src/pages/ProjectDetailPage.tsx
 //　今はidbからデータを取ってくる。projectpageはまだlocalstorageのままなので、今後両方ともidbにする予定
 "use client"
-import { useParams } from "react-router-dom";
+
 import { useEffect, useMemo, useState } from "react";
 import { loadProjectsIdb, loadCommitsIdb,saveProjectsIdb } from "../../../logic/storage-idb";
 //import { loadProjects, loadCommits, saveProjects, } from "../logic/storage";
 import type { Project, Commit } from "../../../logic/types";
 import Link from "next/link"
+import {use} from "react"
 
 
 
@@ -22,8 +23,7 @@ function formatMs(ms: number) {
     return `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
 }
 
-export default function ProjectDetailPage() {
-    const { projectId } = useParams();
+export default function ProjectDetailPage({params}:{params:Promise<{id:string}>}) {
 
     const [projects, setProjects] = useState<Project[]>([]);
     const [commitsAll, setCommitsAll] = useState<Commit[]>([]);
@@ -31,11 +31,8 @@ export default function ProjectDetailPage() {
     const [workMinutesInput, setWorkMinutesInput] = useState("");
     const [breakMinutesInput, setBreakMinutesInput] = useState("");
     const [projectMemoInput, setProjectMemoInput] = useState("");
-
-    /*const refresh = () => {
-        setProjects(loadProjects());
-        setCommitsAll(loadCommits());
-    };*/
+    const resolvedParams=use(params);
+    const projectId=resolvedParams.id;
 
     const refresh = async () => {// idb版のリフレッシュ関数。ProjectsPageの方もこれに合わせて書き換える予定
         const [nextProjects, nextCommits] = await Promise.all([
