@@ -438,10 +438,10 @@ export default function TimerPage({params}:{params: Promise<{id:string}>}) {
     return (
         
         <main style={{ maxWidth: 720, margin: "0 auto", padding: 24, fontFamily: "system-ui" }}>
-        <button onClick={handleBackToProjects}>←Projectsへ戻る</button>
+        <Link href="/" className="text-sm border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg">←Projectsへ戻る</Link>
             <header style={{ marginBottom: 12 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                    <h1 style={{ fontSize: 22, margin: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginTop: 15 }}>
+                    <h1 style={{ fontSize: 22, margin:0 }}>
                     {selectedProject?.name ?? "Worklog Timer"}
                     </h1>
 
@@ -494,7 +494,7 @@ export default function TimerPage({params}:{params: Promise<{id:string}>}) {
                     {selectedProject.memo}
                     </p>
                 ) : null}
-                </header>
+            </header>
 
             <section
                 style={{
@@ -519,7 +519,7 @@ export default function TimerPage({params}:{params: Promise<{id:string}>}) {
                     <button
                         onClick={start}
                         disabled={!!activeSession}
-                        style={{ padding: "10px 14px", borderRadius: 10 }}
+                        className="text-sm border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg"
                     >
                         Start
                     </button>
@@ -527,7 +527,7 @@ export default function TimerPage({params}:{params: Promise<{id:string}>}) {
                     <button
                         onClick={pause}
                         disabled={!running}
-                        style={{ padding: "10px 14px", borderRadius: 10 }}
+                        className="text-sm border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg"
                     >
                         Pause
                     </button>
@@ -535,7 +535,7 @@ export default function TimerPage({params}:{params: Promise<{id:string}>}) {
                     <button
                         onClick={resume}
                         disabled={!paused}
-                        style={{ padding: "10px 14px", borderRadius: 10 }}
+                        className="text-sm border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg"
                     >
                         Resume
                     </button>
@@ -543,14 +543,14 @@ export default function TimerPage({params}:{params: Promise<{id:string}>}) {
                     <button
                         onClick={stop}
                         disabled={!activeSession}
-                        style={{ padding: "10px 14px", borderRadius: 10 }}
+                        className="text-sm border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg"
                     >
                         Stop
                     </button>
 
                     <button
                         onClick={clearAll}
-                        style={{ marginLeft: "auto", padding: "10px 14px", borderRadius: 10 }}
+                        className="text-sm border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg ml-auto"
                     >
                         Clear
                     </button>
