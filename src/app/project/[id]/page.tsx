@@ -94,7 +94,7 @@ export default function ProjectDetailPage({params}:{params:Promise<{id:string}>}
         return (
             <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
             <h2>Project not found</h2>
-            <Link href="/">Projectsへ戻る</Link>
+            <Link href="/" className="text-sm border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg">Projectsへ戻る</Link>
             </main>
         );
         }
@@ -112,13 +112,10 @@ export default function ProjectDetailPage({params}:{params:Promise<{id:string}>}
             <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
             <h2>Project not found</h2>
             <p style={{ color: "#666" }}>Projectsに存在しないIDです。</p>
-            <Link href="/">Projectsへ戻る</Link>
+            <Link href="/" className="text-sm border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg">Projectsへ戻る</Link>
             </main>
         );
         }
-
-
-
     const handleSavePomodoroSettings = () => {
         if (!project) return;
 
@@ -182,8 +179,8 @@ export default function ProjectDetailPage({params}:{params:Promise<{id:string}>}
             <h1 style={{ margin: 0 }}>{project.name}</h1>
 
             <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
-            <Link href="/">← 戻る</Link>
-            <Link href={`/timer${projectId}/timer`}>作業する</Link>
+            <Link href="/" className="text-sm border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg">← 戻る</Link>
+            <Link href={`/timer/${projectId}`} className="text-sm border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg">作業する</Link>
             </div>
         </div>
 
@@ -215,6 +212,7 @@ export default function ProjectDetailPage({params}:{params:Promise<{id:string}>}
             <button
                 onClick={handleSaveProjectMemo}
                 style={{ padding: "8px 12px", borderRadius: 10 }}
+                className="text-sm border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg"
             >
                 保存
             </button>
@@ -322,6 +320,7 @@ export default function ProjectDetailPage({params}:{params:Promise<{id:string}>}
             <button
                 onClick={handleSavePomodoroSettings}
                 style={{ padding: "8px 12px", borderRadius: 10 }}
+                className="text-sm border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg"
             >
                 保存
             </button>

@@ -13,6 +13,7 @@ import {
     addCommitIdb,
 } from "../../../logic/storage-idb";//idb用
 import {use} from "react"
+import { useRouter } from 'next/navigation';
 import type { Project, TimerMode, WorkSession } from "../../..//logic/types";
 
 function pad2(n: number) {
@@ -218,9 +219,10 @@ export default function TimerPage({params}:{params: Promise<{id:string}>}) {
         return window.confirm("現在の作業が終了していません。ページを離れますか？");
     };
 
+    const router = useRouter();
     const handleBackToProjects = () => {
         if (!confirmLeaveIfNeeded()) return;
-        <Link href="/"></Link>
+        router.push('/');
     };
 
     // --- 一時停止/再開 ---
@@ -438,13 +440,13 @@ export default function TimerPage({params}:{params: Promise<{id:string}>}) {
     return (
         
         <main style={{ maxWidth: 720, margin: "0 auto", padding: 24, fontFamily: "system-ui" }}>
-        <Link href="/" className="text-sm border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg">←Projectsへ戻る</Link>
+        <button onClick={handleBackToProjects} className="text-sm border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg">←Projectsへ戻る</button>
             <header style={{ marginBottom: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginTop: 15 }}>
                     <h1 style={{ fontSize: 22, margin:0 }}>
-                    {selectedProject?.name ?? "Worklog Timer"}
+                        {selectedProject?.name ?? "Worklog Timer"}
                     </h1>
-
+                    
                     {selectedProject.dueDate ? (
                     <span
                         style={{
