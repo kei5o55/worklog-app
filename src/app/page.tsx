@@ -311,7 +311,7 @@ export default function ProjectsPage() {
                     </div>
                   
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    <Link href="/project" className="border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg">
+                    <Link href={`/project/${p.id}`} className="border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg">
                       詳細
                     </Link>
                     <Link href={`/timer/${p.id}`} className="border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg">
