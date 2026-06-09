@@ -110,6 +110,8 @@ export default function TimerPage() {
     const pomodoroBreakMs = (selectedProject?.pomodoroBreakMinutes ?? 5) * 60 * 1000;
 
     // 表示用の現在時刻（runningのときだけ更新）
+    //コンポーネントが読まれたタイミングの時刻を初期値として持ち、そこから進んだ時刻（何秒後かにDate.now）の差をタイマーとして表示
+    //開始時刻～終了時刻を持てる
     const [now, setNow] = useState<number>(() => Date.now());
 
     const activeSession = useMemo(
