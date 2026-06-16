@@ -9,8 +9,9 @@
 **DEMO:**
 https://worklog-app-ruby.vercel.app/projects
 
-現在以下ブランチにてNext.jsを用いた開発環境への移行中です。
-https://github.com/kei5o55/worklog-app/tree/migrate-next-js
+#### 以下リポジトリにてRuby(Rails)を用いたバックエンド開発も並行して進めています。
+
+[https://github.com/kei5o55/worklog-app/tree/migrate-next-js](https://github.com/kei5o55/progress-recorder-backend)
 
 ## コンセプト
 
