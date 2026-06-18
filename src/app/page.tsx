@@ -46,12 +46,35 @@ export default function ProjectsPage() {
     
     const [hasMounted, setHasMounted] = useState(false);
 
+
     useEffect(() => {
       // useEffectはブラウザでしか実行されないので、
       // ここを通ったということは「今はブラウザにいる」と確定できる
       setHasMounted(true);
     }, []);
 
+    const testConnect = async () => {
+      try {
+        // Docker Railsの窓口URLに向けてデータを送信
+        const response = await fetch("http://localhost:3001/api/v1/progress_logs", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            progress_log: {
+              title: "WSL2の綺麗な環境からのテスト送信",
+              status: "開通式リベンジ成功"
+            }
+          })
+        });
+
+        const data = await response.json();
+        console.log("バックエンドからの返事:", data);
+      } catch (error) {
+        console.error("通信エラーが発生しました:", error);
+      }
+    };
     const refresh = async () => {
       const [nextProjects, nextCommits, nextSessions] = await Promise.all([
         loadProjectsIdb(),
@@ -324,6 +347,7 @@ export default function ProjectsPage() {
           </div>
         )}
       </section>
+      <button onClick={testConnect} className="border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer">テスト</button>
 
       <CreateProjectModal open={isCreateOpen} onClose={() => setIsCreateOpen(false)} onCreate={onCreate} />
     
