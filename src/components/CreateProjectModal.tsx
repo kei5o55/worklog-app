@@ -22,11 +22,15 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
   const [dueDate, setDueDate] = useState("");
   const [memo, setMemo] = useState("");
   const [targetHours, setTargetHours] = useState<string | number>("");
-  const [pomodoroWorkMinutes, setPomodoroWorkMinutes] = useState<string | number>("");
-  const [pomodoroBreakMinutes, setPomodoroBreakMinutes] = useState<string | number>("");
+  const [pomodoroWorkMinutes, setPomodoroWorkMinutes] = useState<
+    string | number
+  >("");
+  const [pomodoroBreakMinutes, setPomodoroBreakMinutes] = useState<
+    string | number
+  >("");
   function toHalfWidth(str: string) {
     return str.replace(/[０-９]/g, (s) =>
-      String.fromCharCode(s.charCodeAt(0) - 0xfee0)
+      String.fromCharCode(s.charCodeAt(0) - 0xfee0),
     );
   }
 
@@ -88,7 +92,14 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
 
         <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
           <div>
-            <label style={{ display: "block", fontSize: 12, color: "#555", marginBottom: 6 }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: 12,
+                color: "#555",
+                marginBottom: 6,
+              }}
+            >
               名前（必須）
             </label>
             <input
@@ -106,7 +117,14 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: 12, color: "#555", marginBottom: 6 }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: 12,
+                color: "#555",
+                marginBottom: 6,
+              }}
+            >
               納期（任意）
             </label>
             <input
@@ -124,9 +142,16 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
               入稿締切やイベント日など、ひとまず1つだけ登録
             </div>
           </div>
-          
+
           <div>
-            <label style={{ display: "block", fontSize: 12, color: "#555", marginBottom: 6 }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: 12,
+                color: "#555",
+                marginBottom: 6,
+              }}
+            >
               目標時間（任意 / 時間）
             </label>
             <input
@@ -147,11 +172,23 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
                   setTargetHours(n);
                 }
               }}
-              style={{ width: 160, padding: 10, borderRadius: 10, border: "1px solid #ddd" }}
+              style={{
+                width: 160,
+                padding: 10,
+                borderRadius: 10,
+                border: "1px solid #ddd",
+              }}
             />
           </div>
           <div>
-            <label style={{ display: "block", fontSize: 12, color: "#555", marginBottom: 6 }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: 12,
+                color: "#555",
+                marginBottom: 6,
+              }}
+            >
               ポモドーロ作業時間（任意 / 分）
             </label>
             <input
@@ -170,12 +207,24 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
                   setPomodoroWorkMinutes(n);
                 }
               }}
-              style={{ width: 160, padding: 10, borderRadius: 10, border: "1px solid #ddd" }}
+              style={{
+                width: 160,
+                padding: 10,
+                borderRadius: 10,
+                border: "1px solid #ddd",
+              }}
             />
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: 12, color: "#555", marginBottom: 6 }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: 12,
+                color: "#555",
+                marginBottom: 6,
+              }}
+            >
               休憩時間（任意 / 分）
             </label>
             <input
@@ -194,12 +243,24 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
                   setPomodoroBreakMinutes(n);
                 }
               }}
-              style={{ width: 160, padding: 10, borderRadius: 10, border: "1px solid #ddd" }}
+              style={{
+                width: 160,
+                padding: 10,
+                borderRadius: 10,
+                border: "1px solid #ddd",
+              }}
             />
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: 12, color: "#555", marginBottom: 6 }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: 12,
+                color: "#555",
+                marginBottom: 6,
+              }}
+            >
               メモ（任意）
             </label>
             <textarea
@@ -218,13 +279,20 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
         </div>
 
         <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-          <button onClick={onClose} style={{ padding: "10px 14px", borderRadius: 10 }}>
+          <button
+            onClick={onClose}
+            style={{ padding: "10px 14px", borderRadius: 10 }}
+          >
             キャンセル
           </button>
           <button
             onClick={submit}
             disabled={!canCreate}
-            style={{ marginLeft: "auto", padding: "10px 14px", borderRadius: 10 }}
+            style={{
+              marginLeft: "auto",
+              padding: "10px 14px",
+              borderRadius: 10,
+            }}
           >
             作成
           </button>
