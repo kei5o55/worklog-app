@@ -6,6 +6,7 @@ import CreateProjectModal from "../components/CreateProjectModal";
 import type { Project, Commit, WorkSession } from "../logic/types";
 import ContributionHeatmap from "../components/ContributionHeatmap";
 import CalendarBoard from "../components/CalendarBoard";
+import HealthCheckButton from "../components/HealthCheckButton";
 import {
   loadProjectsIdb,
   saveProjectsIdb,
@@ -372,6 +373,7 @@ export default function ProjectsPage() {
         <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
           <ContributionHeatmap commits={commitsAll} title="All Activity" />
         </section>
+        <HealthCheckButton></HealthCheckButton>
       </div>
     </main>
   );
