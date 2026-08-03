@@ -1,13 +1,12 @@
-//src/pages/ProjectDetailPage.tsx
-//　今はidbからデータを取ってくる。projectpageはまだlocalstorageのままなので、今後両方ともidbにする予定
-import { Link, useParams } from "react-router-dom";
+// ⭕️ react-router-dom から Next.js の機能へ置き換え
+import Link from "next/link";
+import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 import {
   loadProjectsIdb,
   loadCommitsIdb,
   saveProjectsIdb,
 } from "../logic/storage-idb";
-//import { loadProjects, loadCommits, saveProjects, } from "../logic/storage";
 import type { Project, Commit } from "../logic/types";
 
 function pad2(n: number) {
@@ -23,7 +22,9 @@ function formatMs(ms: number) {
 }
 
 export default function ProjectDetailPage() {
-  const { projectId } = useParams();
+  const router = useRouter();
+  // ⭕️ URLパラメータ（[projectId]）の取得
+  const projectId = router.query.projectId as string | undefined;
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [commitsAll, setCommitsAll] = useState<Commit[]>([]);
@@ -32,13 +33,7 @@ export default function ProjectDetailPage() {
   const [breakMinutesInput, setBreakMinutesInput] = useState("");
   const [projectMemoInput, setProjectMemoInput] = useState("");
 
-  /*const refresh = () => {
-    setProjects(loadProjects());
-    setCommitsAll(loadCommits());
-  };*/
-
   const refresh = async () => {
-    // idb版のリフレッシュ関数。ProjectsPageの方もこれに合わせて書き換える予定
     const [nextProjects, nextCommits] = await Promise.all([
       loadProjectsIdb(),
       loadCommitsIdb(),
@@ -57,7 +52,6 @@ export default function ProjectDetailPage() {
   }, []);
 
   useEffect(() => {
-    // idb版のリフレッシュ関数に合わせて書き換え
     const onFocus = () => {
       void refresh();
     };
@@ -98,16 +92,7 @@ export default function ProjectDetailPage() {
     [commits],
   );
 
-  if (!projectId) {
-    return (
-      <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
-        <h2>Project not found</h2>
-        <Link to="/projects">Projectsへ戻る</Link>
-      </main>
-    );
-  }
-
-  if (loading) {
+  if (loading || !router.isReady) {
     return (
       <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
         <p>Loading...</p>
@@ -115,12 +100,12 @@ export default function ProjectDetailPage() {
     );
   }
 
-  if (!project) {
+  if (!projectId || !project) {
     return (
       <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
         <h2>Project not found</h2>
         <p style={{ color: "#666" }}>Projectsに存在しないIDです。</p>
-        <Link to="/projects">Projectsへ戻る</Link>
+        <Link href="/projects">Projectsへ戻る</Link>
       </main>
     );
   }
@@ -175,7 +160,6 @@ export default function ProjectDetailPage() {
   const ratio = targetMs ? Math.min(1, totalMs / targetMs) : null;
   const percent = ratio != null ? Math.floor(ratio * 100) : null;
   const pomodoroWorkMinutes = project.pomodoroWorkMinutes ?? null;
-  //const pomodoroBreakMinutes = project.pomodoroBreakMinutes ?? null;
 
   const estimatedPomodoroCount =
     pomodoroWorkMinutes && pomodoroWorkMinutes > 0
@@ -202,8 +186,9 @@ export default function ProjectDetailPage() {
             alignItems: "center",
           }}
         >
-          <Link to={`/projects/`}>← 戻る</Link>
-          <Link to={`/projects/${projectId}/timer`}>作業する</Link>
+          {/* ⭕️ to ➔ href へ変更 */}
+          <Link href="/projects">← 戻る</Link>
+          <Link href={`/projects/${projectId}/timer`}>作業する</Link>
         </div>
       </div>
 
@@ -284,8 +269,9 @@ export default function ProjectDetailPage() {
           >
             {commits.map((c) => (
               <li key={c.id}>
+                {/* ⭕️ to ➔ href へ変更 */}
                 <Link
-                  to={`/projects/${projectId}/commits/${c.id}`}
+                  href={`/projects/${projectId}/commits/${c.id}`}
                   style={{ textDecoration: "none", color: "inherit" }}
                 >
                   <div
@@ -448,7 +434,8 @@ export default function ProjectDetailPage() {
           ) : null}
         </div>
       </section>
-      {/* 下：ギャラリー（仮） */}
+
+      {/* 下：ギャラリー */}
       <section style={{ marginTop: 20 }}>
         <h2 style={{ fontSize: 16 }}>Gallery（仮）</h2>
         {commitsWithImage.length === 0 ? (
@@ -482,7 +469,8 @@ export default function ProjectDetailPage() {
                     padding: 6,
                   }}
                 >
-                  <Link to={`/projects/${projectId}/commits/${c.id}`}>
+                  {/* ⭕️ to ➔ href へ変更 */}
+                  <Link href={`/projects/${projectId}/commits/${c.id}`}>
                     <img
                       src={url}
                       alt="commit image"

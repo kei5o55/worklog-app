@@ -48,11 +48,11 @@ export default function ProjectsPage() {
 
   const [hasMounted, setHasMounted] = useState(false);
 
-  useEffect(() => {
-    // useEffectはブラウザでしか実行されないので、
-    // ここを通ったということは「今はブラウザにいる」と確定できる
-    setHasMounted(true);
-  }, []);
+    useEffect(() => {
+      // useEffectはブラウザでしか実行されないので、
+      // ここを通ったということは「今はブラウザにいる」と確定できる
+      setHasMounted(true);
+    }, []);
 
   const testConnect = async () => {
     try {
@@ -390,12 +390,7 @@ export default function ProjectsPage() {
           </div>
         )}
       </section>
-      <button
-        onClick={testConnect}
-        className="border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer"
-      >
-        テスト
-      </button>
+      <button className="border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg" onClick={testConnect}>テストボタン</button>
 
       <CreateProjectModal
         open={isCreateOpen}

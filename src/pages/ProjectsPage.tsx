@@ -1,6 +1,6 @@
-//src/pages/ProjectsPage.tsx
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+// ⭕️ react-router-dom の Link を next/link に置き換え
+import Link from "next/link";
 import type { NewProjectInput } from "../components/CreateProjectModal";
 import CreateProjectModal from "../components/CreateProjectModal";
 import type { Project, Commit, WorkSession } from "../logic/types";
@@ -19,12 +19,6 @@ function uid() {
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-/*function normalizeProject(p: Project): Project {
-  const due = p.dueDate?.trim() ? p.dueDate.trim() : undefined;
-  const memo = p.memo?.trim() ? p.memo.trim() : undefined;
-  return { ...p, dueDate: due, memo };
-}*/
-
 function daysUntil(dueDate: string) {
   const [y, m, d] = dueDate.split("-").map(Number);
   const due = new Date(y, m - 1, d, 23, 59, 59, 999).getTime();
@@ -39,8 +33,6 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  //const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  //const [newproject, setNewProject] = useState<Project | null>(null);
   const [sessionsAll, setSessionsAll] = useState<WorkSession[]>([]);
 
   const refresh = async () => {
@@ -327,15 +319,16 @@ export default function ProjectsPage() {
                     )}
                   </div>
 
+                  {/* ⭕️ React Router の to 属性を Next.js の href 属性に変更 */}
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                     <Link
-                      to={`/projects/${p.id}`}
+                      href={`/projects/${p.id}`}
                       style={{ padding: "8px 10px" }}
                     >
                       詳細
                     </Link>
                     <Link
-                      to={`/projects/${p.id}/timer`}
+                      href={`/projects/${p.id}/timer`}
                       style={{ padding: "8px 10px" }}
                     >
                       作業する
