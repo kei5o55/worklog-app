@@ -1,6 +1,5 @@
-// ⭕️ react-router-dom を Next.js の機能に置き換え
-import Link from "next/link";
-import { useRouter } from "next/router";
+// src/pages/CommitDetailPage.tsx
+import { Link, useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { loadProjectsIdb, loadCommitsIdb } from "../logic/storage-idb";
 import type { Project, Commit } from "../logic/types";
@@ -17,10 +16,7 @@ function formatMs(ms: number) {
 }
 
 export default function CommitDetailPage() {
-  // ⭕️ useRouter() から URL パラメータを取得 (string | string[] | undefined なので型を吸収)
-  const router = useRouter();
-  const projectId = router.query.projectId as string | undefined;
-  const commitId = router.query.commitId as string | undefined;
+  const { projectId, commitId } = useParams();
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [commitsAll, setCommitsAll] = useState<Commit[]>([]);
@@ -80,12 +76,11 @@ export default function CommitDetailPage() {
     };
   }, [commit]);
 
-  // ⭕️ React Router の `to` を Next.js の `href` に変更
   if (!projectId || !commitId) {
     return (
       <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
         <h2>Not found</h2>
-        <Link href="/projects">Projectsへ</Link>
+        <Link to="/projects">Projectsへ</Link>
       </main>
     );
   }
@@ -103,7 +98,7 @@ export default function CommitDetailPage() {
       <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
         <h2>Commit not found</h2>
         <div style={{ marginTop: 8 }}>
-          <Link href={`/projects/${projectId}`}>プロジェクト詳細へ戻る</Link>
+          <Link to={`/projects/${projectId}`}>プロジェクト詳細へ戻る</Link>
         </div>
       </main>
     );
@@ -130,8 +125,8 @@ export default function CommitDetailPage() {
         <div style={{ color: "#666", fontSize: 12 }}>{project.name}</div>
 
         <div style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
-          <Link href={`/projects/${projectId}`}>← 戻る</Link>
-          <Link href={`/projects/${projectId}/timer`}>作業する</Link>
+          <Link to={`/projects/${projectId}`}>← 戻る</Link>
+          <Link to={`/projects/${projectId}/timer`}>作業する</Link>
         </div>
       </div>
 
