@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { DraftCommit } from "../components/CommitModal";
 import CommitModal from "../components/CommitModal";
-import { useNavigate, useParams } from "react-router-dom";
+import { useRouter } from "next/router"; // ⭕️ react-router-dom から next/router へ変更
 import {
   loadSessionsIdb,
   saveSessionsIdb,
@@ -40,6 +40,10 @@ function uid() {
 }
 
 export default function TimerPage() {
+  const router = useRouter();
+  // ⭕️ Next.js の router.query から URL パラメータ（projectId）を取得
+  const projectId = router.query.projectId as string | undefined;
+
   const [sessions, setSessions] = useState<WorkSession[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +53,6 @@ export default function TimerPage() {
   const [phaseStartedAt, setPhaseStartedAt] = useState<number | null>(null);
   const [completedPomodoros, setCompletedPomodoros] = useState(0);
   const [phasePausedAt, setPhasePausedAt] = useState<number | null>(null);
-  const { projectId } = useParams();
 
   // いまは仮。将来は projectId からプロジェクト名を引く
   const selectedProject = useMemo(() => {
@@ -106,7 +109,6 @@ export default function TimerPage() {
   const [draftCommit, setDraftCommit] = useState<DraftCommit | null>(null);
   const [isCommitOpen, setIsCommitOpen] = useState(false);
 
-  const navigate = useNavigate();
   const pomodoroWorkMs =
     (selectedProject?.pomodoroWorkMinutes ?? 25) * 60 * 1000;
   const pomodoroBreakMs =
@@ -223,7 +225,7 @@ export default function TimerPage() {
 
   const handleBackToProjects = () => {
     if (!confirmLeaveIfNeeded()) return;
-    navigate("/projects");
+    router.push("/projects"); // ⭕️ navigate() を router.push() へ変更
   };
 
   // --- 一時停止/再開 ---
@@ -782,7 +784,7 @@ export default function TimerPage() {
 
           finalizeStopSession();
           finalizeAndClose();
-          navigate("/projects");
+          router.push("/projects"); // ⭕️ navigate() を router.push() へ変更
         }}
         onSaveAndContinue={async () => {
           if (!draftCommit || !projectId) return;
