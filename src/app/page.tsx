@@ -1,4 +1,3 @@
-//src/app/Page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -12,7 +11,7 @@ import {
   saveProjectsIdb,
   loadCommitsIdb,
   loadSessionsIdb,
-} from "../logic/storage-idb"; //idb用
+} from "../logic/storage-idb";
 
 import Link from "next/link";
 
@@ -21,12 +20,6 @@ function uid() {
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
-
-/*function normalizeProject(p: Project): Project {
-  const due = p.dueDate?.trim() ? p.dueDate.trim() : undefined;
-  const memo = p.memo?.trim() ? p.memo.trim() : undefined;
-  return { ...p, dueDate: due, memo };
-}*/
 
 function daysUntil(dueDate: string) {
   const [y, m, d] = dueDate.split("-").map(Number);
@@ -42,21 +35,15 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  //const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  //const [newproject, setNewProject] = useState<Project | null>(null);
   const [sessionsAll, setSessionsAll] = useState<WorkSession[]>([]);
-
   const [hasMounted, setHasMounted] = useState(false);
 
-    useEffect(() => {
-      // useEffectはブラウザでしか実行されないので、
-      // ここを通ったということは「今はブラウザにいる」と確定できる
-      setHasMounted(true);
-    }, []);
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   const testConnect = async () => {
     try {
-      // Docker Railsの窓口URLに向けてデータを送信
       const response = await fetch(
         "http://localhost:3001/api/v1/progress_logs",
         {
@@ -79,6 +66,7 @@ export default function ProjectsPage() {
       console.error("通信エラーが発生しました:", error);
     }
   };
+
   const refresh = async () => {
     const [nextProjects, nextCommits, nextSessions] = await Promise.all([
       loadProjectsIdb(),
@@ -110,7 +98,6 @@ export default function ProjectsPage() {
   const sorted = useMemo(() => {
     const copy = [...projects];
 
-    // 納期あり→近い順、納期なし→最後、同条件なら新しい順
     copy.sort((a, b) => {
       const ad = a.dueDate?.trim() ? a.dueDate.trim() : "";
       const bd = b.dueDate?.trim() ? b.dueDate.trim() : "";
@@ -130,7 +117,6 @@ export default function ProjectsPage() {
     for (const c of commitsAll) {
       const prev = map.get(c.projectId);
 
-      // 画像付き優先
       if (c.image?.blob) {
         if (!prev || prev.endedAt < c.endedAt) {
           map.set(c.projectId, c);
@@ -195,60 +181,56 @@ export default function ProjectsPage() {
     await saveProjectsIdb(nextProjects);
   };
 
-  // まだブラウザでの準備ができていないなら、何も表示しない（またはLoadingを出す）
   if (!hasMounted) {
     return null;
   }
 
   return (
-    <main
-      style={{
-        maxWidth: 820,
-        margin: "0 auto",
-        padding: 24,
-        fontFamily: "system-ui",
-      }}
-    >
-      <header style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <h1 style={{ margin: 0 }}>Worklog</h1>
-        <button
-          onClick={() => setIsCreateOpen(true)}
-          style={{ marginLeft: "auto", padding: "10px 14px", borderRadius: 10 }}
-          className="border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer"
-        >
-          + 新規プロジェクト
-        </button>
+    <main className="max-w-4xl mx-auto min-h-screen px-4 py-8 space-y-8 font-sans text-slate-800 antialiased">
+      {/* Header */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+            Worklog
+          </h1>
+          <p className="text-xs text-slate-500 mt-1">
+            データはブラウザ（IndexedDB）に安全に保存されます
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={testConnect}
+            className="text-xs font-semibold text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 transition-colors cursor-pointer"
+          >
+            APIテスト
+          </button>
+          <button
+            onClick={() => setIsCreateOpen(true)}
+            className="bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm px-4 py-2.5 rounded-xl shadow-sm hover:shadow transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            <span className="text-lg leading-none">+</span> 新規プロジェクト
+          </button>
+        </div>
       </header>
 
-      <p style={{ color: "#666", marginTop: 8 }}>
-        ※ indexedDB に保存されます（リロードしても残る）
-      </p>
-
-      <section style={{ marginTop: 16 }}>
+      {/* Projects List */}
+      <section>
         {loading ? (
-          <div
-            style={{
-              border: "1px dashed #bbb",
-              borderRadius: 12,
-              padding: 16,
-              color: "#777",
-            }}
-          >
-            Loading...
+          <div className="flex items-center justify-center p-12 rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 text-slate-400 font-medium text-sm">
+            データを読み込み中...
           </div>
         ) : sorted.length === 0 ? (
-          <div
-            style={{
-              border: "1px dashed #bbb",
-              borderRadius: 12,
-              padding: 16,
-              color: "#777",
-            }}
-          >
-            まだプロジェクトがありません。「+ 新規プロジェクト」から作成。
+          <div className="text-center py-12 px-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50/50">
+            <p className="text-slate-500 font-medium">
+              まだプロジェクトがありません。
+            </p>
+            <p className="text-xs text-slate-400 mt-1">
+              右上の「+ 新規プロジェクト」ボタンから作成を始めましょう！
+            </p>
           </div>
         ) : (
-          <div style={{ display: "grid", gap: 12 }}>
+          <div className="grid gap-4">
             {sorted.map((p) => {
               const due = p.dueDate?.trim() ? p.dueDate.trim() : "";
               const remain = due ? daysUntil(due) : null;
@@ -263,125 +245,109 @@ export default function ProjectsPage() {
               return (
                 <article
                   key={p.id}
-                  style={{
-                    border: "1px solid #b9b9b9",
-                    background: "white",
-                    borderRadius: 14,
-                    padding: 14,
-                    display: "grid",
-                    gap: 10,
-                  }}
+                  className="group relative bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-4"
                 >
-                  <div
-                    style={{ display: "flex", alignItems: "baseline", gap: 10 }}
-                  >
-                    <div style={{ fontSize: 18, fontWeight: 700 }}>
-                      {p.name}
-                    </div>
-                    {isRunning ? (
-                      <span
-                        style={{
-                          fontSize: 12,
-                          padding: "2px 8px",
-                          borderRadius: 999,
-                          background: "#e8f1ff",
-                          border: "1px solid #4f8cff",
-                          color: "#2f6fd6",
-                        }}
-                      >
-                        作業中
-                      </span>
-                    ) : isPaused ? (
-                      <span
-                        style={{
-                          fontSize: 12,
-                          padding: "2px 8px",
-                          borderRadius: 999,
-                          background: "#f5f5f5",
-                          border: "1px solid #bbb",
-                          color: "#666",
-                        }}
-                      >
-                        一時停止中
-                      </span>
-                    ) : null}
+                  {/* Top Bar: Name, Status & Actions */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                        {p.name}
+                      </h2>
 
-                    {due ? (
-                      <div style={{ fontSize: 12, color: "#666" }}>
-                        納期: {due}
-                        {remain != null && (
-                          <span style={{ marginLeft: 8 }}>
-                            （あと{remain}日）
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <div style={{ fontSize: 12, color: "#999" }}>
-                        納期なし
-                      </div>
-                    )}
-                    {p.pomodoroWorkMinutes && p.pomodoroBreakMinutes ? (
-                      <div style={{ fontSize: 12, color: "#666" }}>
-                        ポモドーロ: {p.pomodoroWorkMinutes}分 / 休憩{" "}
-                        {p.pomodoroBreakMinutes}分
-                      </div>
-                    ) : (
-                      <div style={{ fontSize: 12, color: "#999" }}>
-                        ポモドーロ未設定
-                      </div>
-                    )}
+                      {isRunning && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200 animate-pulse">
+                          <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+                          作業中
+                        </span>
+                      )}
+                      {isPaused && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                          一時停止中
+                        </span>
+                      )}
+                    </div>
+
                     <button
                       onClick={() => onDelete(p.id)}
-                      style={{
-                        marginLeft: "auto",
-                        padding: "6px 10px",
-                        borderRadius: 10,
-                      }}
-                      className="border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer"
-                      title="削除"
+                      className="text-xs font-medium text-slate-400 hover:text-red-600 transition-colors px-2 py-1 rounded hover:bg-red-50 cursor-pointer ml-auto sm:ml-0"
+                      title="プロジェクトを削除"
                     >
                       削除
                     </button>
                   </div>
-                  <div style={{ display: "flex", gap: 12 }}>
-                    {p.memo ? (
-                      <div style={{ color: "#333", whiteSpace: "pre-wrap" }}>
-                        {p.memo}
+
+                  {/* Details Meta */}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+                    {due ? (
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium text-slate-600">
+                          納期: {due}
+                        </span>
+                        {remain != null && (
+                          <span
+                            className={`font-semibold ${
+                              remain < 0
+                                ? "text-red-500"
+                                : remain <= 3
+                                ? "text-amber-600"
+                                : "text-sky-600"
+                            }`}
+                          >
+                            （{remain < 0 ? `${Math.abs(remain)}日超過` : `あと${remain}日`}）
+                          </span>
+                        )}
                       </div>
                     ) : (
-                      <div style={{ color: "#999" }}>（メモなし）</div>
+                      <span className="text-slate-400">納期なし</span>
                     )}
-                    {imageUrl ? (
-                      <img
-                        src={imageUrl}
-                        alt="latest commit"
-                        style={{
-                          maxHeight: 180,
-                          marginLeft: "auto",
-                          objectFit: "cover",
-                          borderRadius: 10,
-                          border: "1px solid #ddd",
-                        }}
-                      />
+
+                    <span className="text-slate-300">•</span>
+
+                    {p.pomodoroWorkMinutes && p.pomodoroBreakMinutes ? (
+                      <span>
+                        ポモドーロ: {p.pomodoroWorkMinutes}分 / 休憩 {p.pomodoroBreakMinutes}分
+                      </span>
                     ) : (
-                      <div style={{ color: "#aaa", fontSize: 12 }}>
-                        （画像なし）
+                      <span className="text-slate-400">ポモドーロ未設定</span>
+                    )}
+                  </div>
+
+                  {/* Main Content Area: Memo + Image */}
+                  <div className="flex flex-col sm:flex-row gap-4 items-start justify-between">
+                    <div className="flex-1 text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+                      {p.memo ? (
+                        p.memo
+                      ) : (
+                        <span className="text-slate-400 italic text-xs">
+                          （メモはありません）
+                        </span>
+                      )}
+                    </div>
+
+                    {imageUrl && (
+                      <div className="shrink-0 w-full sm:w-auto">
+                        <img
+                          src={imageUrl}
+                          alt="latest commit"
+                          className="h-28 sm:h-32 w-full sm:w-48 object-cover rounded-xl border border-slate-200 shadow-sm"
+                        />
                       </div>
                     )}
                   </div>
 
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  {/* Bottom Action Bar */}
+                  <div className="flex items-center gap-2.5 pt-2">
                     <Link
                       href={`/project/${p.id}`}
-                      className="border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg"
+                      className="text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-lg transition-colors"
                     >
-                      詳細
+                      詳細を見る
                     </Link>
                     <Link
                       href={`/timer/${p.id}`}
-                      className="border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg"
+                      className="text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 px-4 py-2 rounded-lg shadow-sm transition-colors"
                     >
-                      作業する
+                      作業をはじめる
                     </Link>
                   </div>
                 </article>
@@ -390,7 +356,6 @@ export default function ProjectsPage() {
           </div>
         )}
       </section>
-      <button className="border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg" onClick={testConnect}>テストボタン</button>
 
       <CreateProjectModal
         open={isCreateOpen}
@@ -398,13 +363,16 @@ export default function ProjectsPage() {
         onCreate={onCreate}
       />
 
-      <section>
-        <CalendarBoard projectsFromParent={projects} />
-      </section>
+      {/* Calendar & Heatmap */}
+      <div className="space-y-6 pt-4 border-t border-slate-200">
+        <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+          <CalendarBoard projectsFromParent={projects} />
+        </section>
 
-      <section style={{ marginTop: 12 }}>
-        <ContributionHeatmap commits={commitsAll} title="All Activity" />
-      </section>
+        <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+          <ContributionHeatmap commits={commitsAll} title="All Activity" />
+        </section>
+      </div>
     </main>
   );
 }

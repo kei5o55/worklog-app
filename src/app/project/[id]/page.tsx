@@ -1,5 +1,5 @@
 //src/pages/ProjectDetailPage.tsx
-//　今はidbからデータを取ってくる。projectpageはまだlocalstorageのままなので、今後両方ともidbにする予定
+// 今はidbからデータを取ってくる。projectpageはまだlocalstorageのままなので、今後両方ともidbにする予定
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -102,13 +102,13 @@ export default function ProjectDetailPage({
 
   if (!projectId) {
     return (
-      <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
-        <h2>Project not found</h2>
+      <main className="max-w-3xl mx-auto min-h-screen px-4 py-12 space-y-4">
+        <h2 className="text-2xl font-bold text-slate-900">Project not found</h2>
         <Link
           href="/"
-          className="text-sm border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg"
+          className="inline-flex items-center text-sm font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 py-2 px-4 rounded-xl shadow-sm transition-colors"
         >
-          Projectsへ戻る
+          ← Projectsへ戻る
         </Link>
       </main>
     );
@@ -116,26 +116,29 @@ export default function ProjectDetailPage({
 
   if (loading) {
     return (
-      <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
-        <p>Loading...</p>
+      <main className="max-w-3xl mx-auto min-h-screen px-4 py-12">
+        <div className="flex items-center justify-center p-12 rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 text-slate-400 font-medium text-sm">
+          Loading...
+        </div>
       </main>
     );
   }
 
   if (!project) {
     return (
-      <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
-        <h2>Project not found</h2>
-        <p style={{ color: "#666" }}>Projectsに存在しないIDです。</p>
+      <main className="max-w-3xl mx-auto min-h-screen px-4 py-12 space-y-4">
+        <h2 className="text-2xl font-bold text-slate-900">Project not found</h2>
+        <p className="text-sm text-slate-500">Projectsに存在しないIDです。</p>
         <Link
           href="/"
-          className="text-sm border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg"
+          className="inline-flex items-center text-sm font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 py-2 px-4 rounded-xl shadow-sm transition-colors"
         >
-          Projectsへ戻る
+          ← Projectsへ戻る
         </Link>
       </main>
     );
   }
+
   const handleSavePomodoroSettings = () => {
     if (!project) return;
 
@@ -194,148 +197,180 @@ export default function ProjectDetailPage({
       : null;
 
   return (
-    <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
-        <h1 style={{ margin: 0 }}>{project.name}</h1>
+    <main className="max-w-3xl mx-auto min-h-screen px-4 py-8 space-y-6 font-sans text-slate-800 antialiased">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-5">
+        <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+          {project.name}
+        </h1>
 
-        <div
-          style={{
-            marginLeft: "auto",
-            display: "flex",
-            gap: 10,
-            alignItems: "center",
-          }}
-        >
+        <div className="flex items-center gap-2.5">
           <Link
             href="/"
-            className="text-sm border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg"
+            className="text-xs font-semibold text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 py-2 px-3.5 rounded-xl shadow-sm transition-colors"
           >
             ← 戻る
           </Link>
           <Link
             href={`/timer/${projectId}`}
-            className="text-sm border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg"
+            className="text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 py-2 px-4 rounded-xl shadow-sm transition-colors"
           >
             作業する
           </Link>
         </div>
       </div>
 
-      {/* 上：サマリー */}
-      <section
-        style={{
-          marginTop: 16,
-          border: "1px solid #ddd",
-          borderRadius: 12,
-          padding: 12,
-        }}
-      >
-        <div>コミット回数：{commits.length}</div>
-        <div>累計時間：{formatMs(totalMs)}</div>
-        {project.dueDate?.trim() ? <div>納期：{project.dueDate}</div> : null}
+      {/* 上：サマリー & 進捗 */}
+      <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center">
+          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <span className="block text-xs font-medium text-slate-500">コミット回数</span>
+            <span className="text-xl font-bold text-slate-800">{commits.length} 回</span>
+          </div>
+          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <span className="block text-xs font-medium text-slate-500">累計時間</span>
+            <span className="text-xl font-bold text-slate-800 tabular-nums">{formatMs(totalMs)}</span>
+          </div>
+          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 col-span-2 sm:col-span-1">
+            <span className="block text-xs font-medium text-slate-500">納期</span>
+            <span className="text-xl font-bold text-slate-800">
+              {project.dueDate?.trim() ? project.dueDate : "未設定"}
+            </span>
+          </div>
+        </div>
+
+        {project.targetHours ? (
+          <div className="pt-2 border-t border-slate-100 space-y-1.5">
+            <div className="flex justify-between items-center text-xs text-slate-600">
+              <span className="font-semibold">
+                進捗（目標 {project.targetHours}h）: {percent}%
+              </span>
+              <span className="text-slate-400 tabular-nums">
+                ({formatMs(totalMs)} / {formatMs(project.targetHours * 60 * 60 * 1000)})
+              </span>
+            </div>
+            <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-sky-500 transition-all duration-300 rounded-full"
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+          </div>
+        ) : null}
       </section>
 
-      <section
-        style={{
-          marginTop: 16,
-          border: "1px solid #ddd",
-          borderRadius: 12,
-          padding: 12,
-        }}
-      >
-        <h2 style={{ fontSize: 16, marginTop: 0 }}>プロジェクトメモ</h2>
+      {/* プロジェクトメモ */}
+      <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
+        <h2 className="text-base font-bold text-slate-900">プロジェクトメモ</h2>
 
         <textarea
           value={projectMemoInput}
           onChange={(e) => setProjectMemoInput(e.target.value)}
-          rows={5}
+          rows={4}
           placeholder="このプロジェクトの方針・メモ・やることなど"
-          style={{
-            width: "100%",
-            padding: 10,
-            borderRadius: 10,
-            border: "1px solid #ddd",
-            resize: "vertical",
-          }}
+          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all resize-y"
         />
 
-        <div style={{ marginTop: 8 }}>
+        <div className="flex justify-end">
           <button
             onClick={handleSaveProjectMemo}
-            style={{ padding: "8px 12px", borderRadius: 10 }}
-            className="text-sm border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg"
+            className="text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl transition-colors cursor-pointer"
           >
-            保存
+            メモを保存
           </button>
         </div>
       </section>
 
+      {/* ポモドーロ */}
+      <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+        <h2 className="text-base font-bold text-slate-900">ポモドーロ設定</h2>
+
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                作業時間（分）
+              </label>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                value={workMinutesInput}
+                onChange={(e) => setWorkMinutesInput(e.target.value)}
+                placeholder="例: 25"
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                休憩時間（分）
+              </label>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                value={breakMinutesInput}
+                onChange={(e) => setBreakMinutesInput(e.target.value)}
+                placeholder="例: 5"
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
+            <div className="text-xs text-slate-500">
+              {project.pomodoroWorkMinutes ? (
+                <span>
+                  現在: <strong className="text-slate-700">{project.pomodoroWorkMinutes}分</strong> / 休憩{" "}
+                  <strong className="text-slate-700">{project.pomodoroBreakMinutes ?? 5}分</strong>
+                  {estimatedPomodoroCount != null && (
+                    <span className="ml-2 text-sky-600 font-medium">
+                      （完了目安: {estimatedPomodoroCount}回）
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <span>このプロジェクトにはポモドーロ設定がありません。</span>
+              )}
+            </div>
+
+            <button
+              onClick={handleSavePomodoroSettings}
+              className="text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl transition-colors cursor-pointer ml-auto"
+            >
+              設定を保存
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* 中：履歴 */}
-      <section style={{ marginTop: 16 }}>
-        <h2 style={{ fontSize: 16 }}>作業履歴</h2>
+      <section className="space-y-3">
+        <h2 className="text-base font-bold text-slate-900">作業履歴</h2>
 
         {commits.length === 0 ? (
-          <div
-            style={{
-              border: "1px dashed #bbb",
-              borderRadius: 12,
-              padding: 16,
-              color: "#777",
-            }}
-          >
-            まだコミットがありません。「作業する」からタイマーを回して Stop →
-            保存してね。
+          <div className="text-center py-10 px-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 text-slate-500 text-sm">
+            まだコミットがありません。「作業する」からタイマーを回して Stop → 保存してね。
           </div>
         ) : (
-          <ul
-            style={{
-              listStyle: "none",
-              padding: 0,
-              display: "grid",
-              gap: 10,
-              cursor: "pointer",
-              transition: "background 0.15s",
-            }}
-          >
+          <ul className="grid gap-3 p-0 list-none">
             {commits.map((c) => (
               <li key={c.id}>
                 <Link
                   href={`/projects/${projectId}/commits/${c.id}`}
-                  style={{ textDecoration: "none", color: "inherit" }}
+                  className="block bg-white border border-slate-200 hover:border-sky-300 rounded-2xl p-4 shadow-sm hover:shadow transition-all group"
                 >
-                  <div
-                    style={{
-                      border: "1px solid #ddd",
-                      borderRadius: 12,
-                      padding: 12,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 8,
-                        alignItems: "baseline",
-                      }}
-                    >
-                      <strong style={{ fontVariantNumeric: "tabular-nums" }}>
-                        {formatMs(c.durationMs)}
-                      </strong>
-                      <span style={{ fontSize: 12, color: "#666" }}>
-                        {new Date(c.endedAt).toLocaleString()}
-                      </span>
-                    </div>
-
-                    <p style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>
-                      {c.note?.trim() || "（メモなし）"}
-                    </p>
+                  <div className="flex items-center justify-between text-xs text-slate-500 pb-2 border-b border-slate-100">
+                    <strong className="text-sm font-bold text-slate-900 group-hover:text-sky-600 transition-colors tabular-nums">
+                      {formatMs(c.durationMs)}
+                    </strong>
+                    <span>{new Date(c.endedAt).toLocaleString()}</span>
                   </div>
+
+                  <p className="mt-2 text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                    {c.note?.trim() || "（メモなし）"}
+                  </p>
                 </Link>
               </li>
             ))}
@@ -343,183 +378,32 @@ export default function ProjectDetailPage({
         )}
       </section>
 
-      <section style={{ marginTop: 16 }}>
-        {project.targetHours ? (
-          <div style={{ marginTop: 12 }}>
-            <div style={{ fontSize: 12, marginBottom: 4, color: "#555" }}>
-              進捗（目標 {project.targetHours}h）：{percent}%
-              <span style={{ marginLeft: 8, color: "#777" }}>
-                ({formatMs(totalMs)} /{" "}
-                {formatMs(project.targetHours * 60 * 60 * 1000)})
-              </span>
-            </div>
-
-            <div
-              style={{
-                height: 12,
-                background: "#eee",
-                borderRadius: 999,
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  height: "100%",
-                  width: `${percent}%`,
-                  background: "#4f8cff",
-                  transition: "width 0.25s",
-                }}
-              />
-            </div>
-          </div>
-        ) : null}
-      </section>
-      <h2 style={{ fontSize: 16, marginTop: 0 }}>ポモドーロ</h2>
-      <section
-        style={{
-          marginTop: 16,
-          border: "1px solid #ddd",
-          borderRadius: 12,
-          padding: 12,
-        }}
-      >
-        <div style={{ display: "grid", gap: 12 }}>
-          <div>
-            <label
-              style={{
-                display: "block",
-                fontSize: 12,
-                color: "#555",
-                marginBottom: 6,
-              }}
-            >
-              作業時間（分）
-            </label>
-            <input
-              type="number"
-              min={1}
-              step={1}
-              value={workMinutesInput}
-              onChange={(e) => setWorkMinutesInput(e.target.value)}
-              style={{
-                width: 160,
-                padding: 10,
-                borderRadius: 10,
-                border: "1px solid #ddd",
-              }}
-            />
-          </div>
-
-          <div>
-            <label
-              style={{
-                display: "block",
-                fontSize: 12,
-                color: "#555",
-                marginBottom: 6,
-              }}
-            >
-              休憩時間（分）
-            </label>
-            <input
-              type="number"
-              min={1}
-              step={1}
-              value={breakMinutesInput}
-              onChange={(e) => setBreakMinutesInput(e.target.value)}
-              style={{
-                width: 160,
-                padding: 10,
-                borderRadius: 10,
-                border: "1px solid #ddd",
-              }}
-            />
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              gap: 8,
-              alignItems: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            <button
-              onClick={handleSavePomodoroSettings}
-              style={{ padding: "8px 12px", borderRadius: 10 }}
-              className="text-sm border border-zinc-500 hover:bg-sky-100 py-2 px-4 font-bold cursor-pointer rounded-lg"
-            >
-              保存
-            </button>
-
-            {project.pomodoroWorkMinutes ? (
-              <span style={{ fontSize: 12, color: "#666" }}>
-                現在: {project.pomodoroWorkMinutes}分 / 休憩{" "}
-                {project.pomodoroBreakMinutes ?? 5}分
-              </span>
-            ) : (
-              <span style={{ fontSize: 12, color: "#777" }}>
-                このプロジェクトにはポモドーロ設定がありません。
-              </span>
-            )}
-          </div>
-
-          {project.pomodoroWorkMinutes ? (
-            <div style={{ fontSize: 13, color: "#555" }}>
-              完了ポモドーロ目安：{estimatedPomodoroCount ?? 0}回
-            </div>
-          ) : null}
-        </div>
-      </section>
       {/* 下：ギャラリー（仮） */}
-      <section style={{ marginTop: 20 }}>
-        <h2 style={{ fontSize: 16 }}>Gallery（仮）</h2>
+      <section className="space-y-3 pt-2">
+        <h2 className="text-base font-bold text-slate-900">Gallery（仮）</h2>
         {commitsWithImage.length === 0 ? (
-          <div
-            style={{
-              border: "1px dashed #bbb",
-              borderRadius: 12,
-              padding: 16,
-              color: "#777",
-            }}
-          >
+          <div className="text-center py-10 px-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 text-slate-500 text-sm">
             画像がまだありません（ここに進捗画像が並びます）
           </div>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
-              gap: 10,
-            }}
-          >
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {commitsWithImage.map((c) => {
               const url = URL.createObjectURL(c.image!.blob);
 
               return (
                 <div
                   key={c.id}
-                  style={{
-                    border: "1px solid #ddd",
-                    borderRadius: 10,
-                    padding: 6,
-                  }}
+                  className="bg-white border border-slate-200 rounded-xl p-2 shadow-sm hover:shadow transition-all overflow-hidden"
                 >
                   <Link href={`/projects/${projectId}/commits/${c.id}`}>
                     <img
                       src={url}
                       alt="commit image"
-                      style={{
-                        width: "100%",
-                        height: 100,
-                        objectFit: "cover",
-                        borderRadius: 6,
-                        display: "block",
-                      }}
+                      className="w-full h-28 object-cover rounded-lg border border-slate-100 hover:opacity-90 transition-opacity"
                     />
                   </Link>
 
-                  <div style={{ fontSize: 11, color: "#666", marginTop: 4 }}>
+                  <div className="text-[11px] text-slate-400 mt-2 text-center">
                     {new Date(c.endedAt).toLocaleDateString()}
                   </div>
                 </div>

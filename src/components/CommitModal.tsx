@@ -84,8 +84,8 @@ export default function CommitModal({
 
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-    const blob: Blob = await new Promise(
-      (resolve) => canvas.toBlob((b) => resolve(b!), "image/jpeg", 0.8), // 画質80%
+    const blob: Blob = await new Promise((resolve) =>
+      canvas.toBlob((b) => resolve(b!), "image/jpeg", 0.8)
     );
 
     URL.revokeObjectURL(url);
@@ -99,202 +99,169 @@ export default function CommitModal({
     <div
       role="dialog"
       aria-modal="true"
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.45)",
-        display: "grid",
-        placeItems: "center",
-        padding: 16,
-        zIndex: 50,
-      }}
+      className="fixed inset-0 bg-zinc-900/50 backdrop-blur-xs grid place-items-center p-4 z-50 overflow-y-auto"
       onMouseDown={(e) => {
-        // 背景クリックで閉じる（誤爆嫌なら消してOK）
         if (e.target === e.currentTarget) onCancel();
       }}
     >
-      <div
-        style={{
-          width: "min(760px, 100%)",
-          background: "white",
-          borderRadius: 14,
-          padding: 16,
-          border: "1px solid #ddd",
-        }}
-      >
-        <div style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
-          <h2 style={{ margin: 0, fontSize: 18 }}>作業コミット</h2>
-          <div style={{ color: "#666", fontSize: 12 }}>
+      <div className="w-full max-w-2xl bg-white rounded-2xl p-6 border border-zinc-200 shadow-xl my-8 font-sans text-zinc-800 animate-in fade-in zoom-in-95 duration-150">
+        {/* ヘッダー */}
+        <div className="flex items-baseline gap-3 pb-4 border-b border-zinc-100">
+          <h2 className="text-xl font-bold tracking-tight text-zinc-900">
+            作業コミット
+          </h2>
+          <div className="text-xs font-semibold px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-600 border border-zinc-200">
             {draft.projectName} / #{draft.commitNumber}
           </div>
         </div>
 
-        <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <Stat label="今回" value={formatMs(durationMs)} />
+        <div className="mt-5 space-y-5">
+          {/* 統計表示 */}
+          <div className="grid grid-cols-3 gap-3">
+            <Stat label="今回" value={formatMs(durationMs)} highlight />
             <Stat label="今日累計" value={formatMs(draft.todayTotalMs)} />
             <Stat label="累計" value={formatMs(draft.projectTotalMs)} />
           </div>
 
-          <div style={{ fontSize: 12, color: "#666" }}>
+          <div className="text-xs text-zinc-400 font-mono">
             {new Date(draft.startedAt).toLocaleString()} →{" "}
             {new Date(draft.endedAt).toLocaleString()}
           </div>
 
-          <label style={{ display: "block", fontSize: 12, color: "#555" }}>
-            今日のまとめメモ
-          </label>
-          <textarea
-            value={draft.note}
-            onChange={(e) => onChange({ ...draft, note: e.target.value })}
-            rows={4}
-            placeholder="例：線画の修正 / 目の形を調整 / 背景ラフ"
-            style={{
-              width: "100%",
-              padding: 10,
-              borderRadius: 10,
-              border: "1px solid #ddd",
-            }}
-          />
+          {/* メモ入力 */}
+          <div>
+            <label className="block text-xs font-semibold text-zinc-600 mb-1.5">
+              今日のまとめメモ
+            </label>
+            <textarea
+              value={draft.note}
+              onChange={(e) => onChange({ ...draft, note: e.target.value })}
+              rows={4}
+              placeholder="例：線画の修正 / 目の形を調整 / 背景ラフ"
+              className="w-full text-sm p-3 rounded-xl border border-zinc-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-100 outline-none resize-y transition-all placeholder:text-zinc-400"
+            />
+          </div>
 
-          <label style={{ display: "block", fontSize: 12, color: "#555" }}>
-            進捗画像
-          </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
+          {/* 画像添付 */}
+          <div>
+            <label className="block text-xs font-semibold text-zinc-600 mb-1.5">
+              進捗画像
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              className="block w-full text-xs text-zinc-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-zinc-100 file:text-zinc-700 hover:file:bg-zinc-200 transition-colors cursor-pointer"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
 
-              if (!file.type.startsWith("image/")) {
-                alert("画像ファイルを選択してください");
-                return;
-              }
+                if (!file.type.startsWith("image/")) {
+                  alert("画像ファイルを選択してください");
+                  return;
+                }
 
-              const compressed = await compressImage(file);
+                const compressed = await compressImage(file);
 
-              if (draft.image?.previewUrl) {
-                URL.revokeObjectURL(draft.image.previewUrl);
-              }
+                if (draft.image?.previewUrl) {
+                  URL.revokeObjectURL(draft.image.previewUrl);
+                }
 
-              onChange({
-                ...draft,
-                image: {
-                  name: compressed.name,
-                  type: compressed.type,
-                  size: compressed.size,
-                  file: compressed,
-                  previewUrl: URL.createObjectURL(compressed),
-                },
-              });
+                onChange({
+                  ...draft,
+                  image: {
+                    name: compressed.name,
+                    type: compressed.type,
+                    size: compressed.size,
+                    file: compressed,
+                    previewUrl: URL.createObjectURL(compressed),
+                  },
+                });
 
-              e.currentTarget.value = "";
-            }}
-          />
-
-          {draft.image && (
-            <div
-              style={{
-                marginTop: 10,
-                border: "1px solid #eee",
-                borderRadius: 10,
-                padding: 10,
-                width: "fit-content",
+                e.currentTarget.value = "";
               }}
-            >
-              <img
-                src={draft.image.previewUrl}
-                alt={draft.image.name}
-                style={{
-                  width: 180,
-                  height: 180,
-                  objectFit: "cover",
-                  borderRadius: 8,
-                  display: "block",
-                }}
-              />
+            />
 
-              <div style={{ marginTop: 8, fontSize: 12, color: "#666" }}>
-                {draft.image.name}
-              </div>
+            {draft.image && (
+              <div className="mt-3 p-3 bg-zinc-50 rounded-xl border border-zinc-200/80 inline-block">
+                <img
+                  src={draft.image.previewUrl}
+                  alt={draft.image.name}
+                  className="w-44 h-44 object-cover rounded-lg border border-zinc-200"
+                />
 
-              <button
-                type="button"
-                onClick={() => {
-                  if (draft.image?.previewUrl) {
-                    URL.revokeObjectURL(draft.image.previewUrl);
-                  }
-
-                  onChange({
-                    ...draft,
-                    image: null,
-                  });
-                }}
-                style={{ marginTop: 8, padding: "6px 10px", borderRadius: 10 }}
-              >
-                画像を外す
-              </button>
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setExpanded((v) => !v)}
-            style={{
-              width: "fit-content",
-              padding: "6px 10px",
-              borderRadius: 10,
-            }}
-          >
-            {expanded ? "過去メモを隠す" : "過去メモを見る"}
-          </button>
-
-          {expanded && (
-            <div
-              style={{
-                border: "1px solid #eee",
-                borderRadius: 10,
-                padding: 10,
-              }}
-            >
-              {draft.recentNotes.length === 0 ? (
-                <div style={{ color: "#888", fontSize: 12 }}>
-                  まだメモがありません
+                <div className="mt-2 text-xs text-zinc-500 truncate max-w-[176px]">
+                  {draft.image.name}
                 </div>
-              ) : (
-                <ul style={{ margin: 0, paddingLeft: 18 }}>
-                  {draft.recentNotes.map((n, i) => (
-                    <li
-                      key={i}
-                      style={{ marginBottom: 6, whiteSpace: "pre-wrap" }}
-                    >
-                      {n}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (draft.image?.previewUrl) {
+                      URL.revokeObjectURL(draft.image.previewUrl);
+                    }
+
+                    onChange({
+                      ...draft,
+                      image: null,
+                    });
+                  }}
+                  className="mt-2 w-full text-xs font-medium py-1.5 px-2.5 text-red-600 bg-white hover:bg-red-50 border border-zinc-200 hover:border-red-200 rounded-lg transition-colors cursor-pointer"
+                >
+                  画像を外す
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* 過去メモ展開 */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              className="text-xs font-semibold text-zinc-600 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 py-1.5 px-3 rounded-lg transition-colors cursor-pointer"
+            >
+              {expanded ? "過去メモを隠す" : "過去メモを見る"}
+            </button>
+
+            {expanded && (
+              <div className="mt-3 p-3.5 bg-zinc-50 rounded-xl border border-zinc-200 text-xs text-zinc-700">
+                {draft.recentNotes.length === 0 ? (
+                  <div className="text-zinc-400 italic">
+                    まだ過去メモがありません
+                  </div>
+                ) : (
+                  <ul className="list-disc list-inside space-y-1.5">
+                    {draft.recentNotes.map((n, i) => (
+                      <li key={i} className="whitespace-pre-wrap leading-relaxed">
+                        {n}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+        {/* フッターアクション */}
+        <div className="flex items-center justify-between gap-2 mt-8 pt-4 border-t border-zinc-100 flex-wrap">
           <button
             onClick={onCancel}
-            style={{ padding: "10px 14px", borderRadius: 10 }}
+            className="text-sm font-medium text-zinc-600 bg-zinc-100 hover:bg-zinc-200 py-2 px-4 rounded-xl transition-colors cursor-pointer"
           >
             キャンセル
           </button>
-          <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+
+          <div className="flex items-center gap-2 ml-auto">
             <button
               onClick={onSave}
-              style={{ padding: "10px 14px", borderRadius: 10 }}
+              className="text-sm font-semibold text-zinc-700 bg-white hover:bg-zinc-100 border border-zinc-300 py-2 px-4 rounded-xl transition-colors cursor-pointer shadow-xs"
             >
               保存して終了
             </button>
             <button
               onClick={onSaveAndContinue}
-              style={{ padding: "10px 14px", borderRadius: 10 }}
+              className="text-sm font-semibold text-white bg-sky-600 hover:bg-sky-500 active:bg-sky-700 py-2 px-4 rounded-xl transition-colors cursor-pointer shadow-xs"
             >
               保存して続ける
             </button>
@@ -305,18 +272,25 @@ export default function CommitModal({
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
   return (
     <div
-      style={{
-        border: "1px solid #eee",
-        borderRadius: 10,
-        padding: "8px 10px",
-        minWidth: 120,
-      }}
+      className={`p-3 rounded-xl border ${
+        highlight
+          ? "bg-sky-50/40 border-sky-200"
+          : "bg-zinc-50/60 border-zinc-200"
+      }`}
     >
-      <div style={{ fontSize: 11, color: "#666" }}>{label}</div>
-      <div style={{ fontSize: 18, fontVariantNumeric: "tabular-nums" }}>
+      <div className="text-xs font-semibold text-zinc-500 mb-0.5">{label}</div>
+      <div className="text-base sm:text-lg font-mono font-bold text-zinc-900 tabular-nums">
         {value}
       </div>
     </div>
