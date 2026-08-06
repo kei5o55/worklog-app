@@ -38,6 +38,9 @@ export default function ProjectDetailPage({
   const [projectMemoInput, setProjectMemoInput] = useState("");
   const resolvedParams = use(params);
   const projectId = resolvedParams.id;
+  const [projectNameInput, setProjectNameInput] = useState("");
+  const [isEditingName, setIsEditingName] = useState(false);
+  
 
   const refresh = async () => {
     // idb版のリフレッシュ関数。ProjectsPageの方もこれに合わせて書き換える予定
@@ -75,6 +78,7 @@ export default function ProjectDetailPage({
 
   useEffect(() => {
     if (!project) return;
+    setProjectNameInput(project.name ?? ""); // ← 追加
     setWorkMinutesInput(
       project.pomodoroWorkMinutes ? String(project.pomodoroWorkMinutes) : "",
     );
@@ -182,6 +186,25 @@ export default function ProjectDetailPage({
     setProjects(nextProjects);
     void saveProjectsIdb(nextProjects);
   };
+  const handleSaveProjectName = () => {
+    if (!project) return;
+
+    const trimmed = projectNameInput.trim();
+    if (!trimmed) return; // 空文字の場合は変更しない
+
+    const nextProjects = projects.map((p) =>
+      p.id === project.id
+        ? {
+            ...p,
+            name: trimmed,
+          }
+        : p,
+    );
+
+    setProjects(nextProjects);
+    void saveProjectsIdb(nextProjects);
+    setIsEditingName(false);
+  };
 
   const targetMs = project.targetHours
     ? project.targetHours * 60 * 60 * 1000
@@ -200,25 +223,84 @@ export default function ProjectDetailPage({
     <main className="max-w-3xl mx-auto min-h-screen px-4 py-8 space-y-6 font-sans text-slate-800 antialiased">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-5">
+  {/* タイトル & 編集フォーム */}
+  <div className="flex-1 min-w-[240px]">
+    {isEditingName ? (
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={projectNameInput}
+          onChange={(e) => setProjectNameInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSaveProjectName();
+            if (e.key === "Escape") {
+              setProjectNameInput(project.name);
+              setIsEditingName(false);
+            }
+          }}
+          autoFocus
+          className="text-2xl font-extrabold text-slate-900 bg-white border border-sky-500 rounded-xl px-3 py-1 focus:outline-none focus:ring-2 focus:ring-sky-500 w-full"
+        />
+        <button
+          onClick={handleSaveProjectName}
+          className="text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 px-3 py-2 rounded-xl transition-colors shrink-0"
+        >
+          保存
+        </button>
+        <button
+          onClick={() => {
+            setProjectNameInput(project.name);
+            setIsEditingName(false);
+          }}
+          className="text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-xl transition-colors shrink-0"
+        >
+          キャンセル
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 group">
         <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
           {project.name}
         </h1>
-
-        <div className="flex items-center gap-2.5">
-          <Link
-            href="/"
-            className="text-xs font-semibold text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 py-2 px-3.5 rounded-xl shadow-sm transition-colors"
+        <button
+          onClick={() => setIsEditingName(true)}
+          className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+          title="プロジェクト名を変更"
+        >
+          {/* 鉛筆アイコン (SVG) */}
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            ← 戻る
-          </Link>
-          <Link
-            href={`/timer/${projectId}`}
-            className="text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 py-2 px-4 rounded-xl shadow-sm transition-colors"
-          >
-            作業する
-          </Link>
-        </div>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+            />
+          </svg>
+        </button>
       </div>
+    )}
+  </div>
+
+  <div className="flex items-center gap-2.5">
+    <Link
+      href="/"
+      className="text-xs font-semibold text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 py-2 px-3.5 rounded-xl shadow-sm transition-colors"
+    >
+      ← 戻る
+    </Link>
+    <Link
+      href={`/timer/${projectId}`}
+      className="text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 py-2 px-4 rounded-xl shadow-sm transition-colors"
+    >
+      作業する
+    </Link>
+  </div>
+</div>
 
       {/* 上：サマリー & 進捗 */}
       <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
