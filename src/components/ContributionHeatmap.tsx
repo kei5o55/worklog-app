@@ -8,12 +8,10 @@ type Props = {
   title?: string;
 };
 
+// --- 日付ユーティリティ (前述の改善版と同様) ---
 function dayKey(ts: number) {
   const d = new Date(ts);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const da = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${da}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function startOfDay(ts: number) {
@@ -23,24 +21,13 @@ function startOfDay(ts: number) {
 }
 
 function addDays(ts: number, days: number) {
-  return ts + days * 24 * 60 * 60 * 1000;
-}
-
-function alignToSunday(ts: number) {
   const d = new Date(ts);
-  const dow = d.getDay(); // 0=Sun
-  return addDays(ts, -dow);
-}
-
-function alignToSaturday(ts: number) {
-  const d = new Date(ts);
-  const dow = d.getDay(); // 6=Sat
-  return addDays(ts, 6 - dow);
+  d.setDate(d.getDate() + days);
+  return d.getTime();
 }
 
 function levelFrom(commitsCount: number, minutes: number) {
-  if (commitsCount <= 0) return 0; // 1コミットで点灯したいのでここが重要
-
+  if (commitsCount <= 0) return 0;
   const hours = minutes / 60;
   if (hours >= 5) return 4;
   if (hours >= 3) return 3;
@@ -49,20 +36,13 @@ function levelFrom(commitsCount: number, minutes: number) {
 }
 
 function levelColor(level: number) {
-  // とりあえずGitHubっぽい
   switch (level) {
-    case 0:
-      return "#ebedf0";
-    case 1:
-      return "#9be9a8";
-    case 2:
-      return "#40c463";
-    case 3:
-      return "#30a14e";
-    case 4:
-      return "#216e39";
-    default:
-      return "#ebedf0";
+    case 0: return "#ebedf0";
+    case 1: return "#9be9a8";
+    case 2: return "#40c463";
+    case 3: return "#30a14e";
+    case 4: return "#216e39";
+    default: return "#ebedf0";
   }
 }
 
@@ -75,27 +55,20 @@ function formatMinutes(min: number) {
   return `${h}h ${m}m`;
 }
 
-function getYearsFromCommits(commits: Commit[]) {
-  const years = new Set<number>();
-  for (const c of commits) years.add(new Date(c.endedAt).getFullYear());
-  const nowY = new Date().getFullYear();
-  years.add(nowY); // 今年は常に見えるように
-  return Array.from(years).sort((a, b) => b - a);
-}
-
 export default function ContributionHeatmap({ commits, title }: Props) {
-  const years = useMemo(() => getYearsFromCommits(commits), [commits]);
+  const years = useMemo(() => {
+    const set = new Set<number>();
+    for (const c of commits) set.add(new Date(c.endedAt).getFullYear());
+    set.add(new Date().getFullYear());
+    return Array.from(set).sort((a, b) => b - a);
+  }, [commits]);
 
   const [mode, setMode] = useState<Mode>("last365");
-  const [year, setYear] = useState<number>(
-    years[0] ?? new Date().getFullYear(),
-  );
+  const [year, setYear] = useState<number>(years[0] ?? new Date().getFullYear());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-  // 日別の合計時間とコミット数
   const statsByDay = useMemo(() => {
     const map = new Map<string, { minutes: number; commits: number }>();
-
     for (const c of commits) {
       const k = dayKey(c.endedAt);
       const prev = map.get(k) ?? { minutes: 0, commits: 0 };
@@ -104,7 +77,6 @@ export default function ContributionHeatmap({ commits, title }: Props) {
         commits: prev.commits + 1,
       });
     }
-
     return map;
   }, [commits]);
 
@@ -114,80 +86,76 @@ export default function ContributionHeatmap({ commits, title }: Props) {
       const start = addDays(end, -364);
       return { start, end, label: "Last 365 days" };
     }
-
-    // 指定年（1/1〜12/31）を表示
     const start = startOfDay(new Date(year, 0, 1).getTime());
     const end = startOfDay(new Date(year, 11, 31).getTime());
     return { start, end, label: String(year) };
   }, [mode, year]);
 
-  // GitHub風の長方形にするため、表示範囲を週境界に揃える
   const aligned = useMemo(() => {
-    const start = alignToSunday(range.start);
-    const end = alignToSaturday(range.end);
-    return { start, end };
-  }, [range.start, range.end]);
+    const startD = new Date(range.start);
+    const endD = new Date(range.end);
+    return {
+      start: addDays(range.start, -startD.getDay()),
+      end: addDays(range.end, 6 - endD.getDay()),
+    };
+  }, [range]);
 
-  // セル（7日×週数）
   const columns = useMemo(() => {
-    const cells: {
-      ts: number;
-      key: string;
-      minutes: number;
-      level: number;
-      inRange: boolean;
-    }[] = [];
-
-    for (let ts = aligned.start; ts <= aligned.end; ts = addDays(ts, 1)) {
-      const k = dayKey(ts);
+    const cells = [];
+    let curr = aligned.start;
+    while (curr <= aligned.end) {
+      const k = dayKey(curr);
       const stat = statsByDay.get(k) ?? { minutes: 0, commits: 0 };
-      const minutes = stat.minutes;
-      const commitsCount = stat.commits;
-      const level = levelFrom(commitsCount, minutes);
-      const inRange = ts >= range.start && ts <= range.end;
-      cells.push({ ts, key: k, minutes, level, inRange });
+      cells.push({
+        ts: curr,
+        key: k,
+        minutes: stat.minutes,
+        level: levelFrom(stat.commits, stat.minutes),
+        inRange: curr >= range.start && curr <= range.end,
+      });
+      curr = addDays(curr, 1);
     }
-
-    // 7日ずつ区切って列にする（縦7）
-    const cols: (typeof cells)[] = [];
+    const cols = [];
     for (let i = 0; i < cells.length; i += 7) cols.push(cells.slice(i, i + 7));
     return cols;
-  }, [aligned.start, aligned.end, statsByDay, range.start, range.end]);
+  }, [aligned, statsByDay, range]);
 
+  // 月ラベルの計算（表示位置のピクセルオフセット付き）
   const monthLabels = useMemo(() => {
-    return columns.map((col) => {
-      const first = col[0]; // その週の最初の日（日曜）
-      const d = new Date(first.ts);
-      return {
-        month: d.getMonth(),
-        label: d.toLocaleString("default", { month: "short" }), // Jan, Feb...
-      };
+    const labels: { colIndex: number; label: string }[] = [];
+    let lastMonth = -1;
+
+    columns.forEach((col, idx) => {
+      const d = new Date(col[0].ts);
+      const month = d.getMonth();
+      if (month !== lastMonth) {
+        labels.push({
+          colIndex: idx,
+          label: d.toLocaleString("en-US", { month: "short" }),
+        });
+        lastMonth = month;
+      }
     });
+    return labels;
   }, [columns]);
 
   return (
-    <section>
-      {title ? (
-        <h3 style={{ fontSize: 14, margin: "8px 0" }}>{title}</h3>
-      ) : null}
+    <section style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", fontSize: 13 }}>
+      {title && <h3 style={{ fontSize: 15, fontWeight: 600, margin: "0 0 12px 0", color: "#1f2328" }}>{title}</h3>}
 
-      {/* Tabs */}
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          flexWrap: "wrap",
-          alignItems: "center",
-          marginBottom: 10,
-        }}
-      >
+      {/* Control Header */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
         <button
-          onClick={() => setMode("last365")}
+          onClick={() => { setMode("last365"); setSelectedDate(null); }}
           style={{
-            padding: "6px 10px",
-            borderRadius: 999,
-            border: "1px solid #ddd",
-            background: mode === "last365" ? "#f3f4f6" : "white",
+            padding: "4px 12px",
+            fontSize: 12,
+            borderRadius: 6,
+            border: "1px solid",
+            borderColor: mode === "last365" ? "#0969da" : "#d0d7de",
+            background: mode === "last365" ? "#ddf4ff" : "#f6f8fa",
+            color: mode === "last365" ? "#0969da" : "#24292f",
+            fontWeight: mode === "last365" ? 600 : 400,
             cursor: "pointer",
           }}
         >
@@ -197,15 +165,16 @@ export default function ContributionHeatmap({ commits, title }: Props) {
         {years.map((y) => (
           <button
             key={y}
-            onClick={() => {
-              setYear(y);
-              setMode("year");
-            }}
+            onClick={() => { setYear(y); setMode("year"); setSelectedDate(null); }}
             style={{
-              padding: "6px 10px",
-              borderRadius: 999,
-              border: "1px solid #ddd",
-              background: mode === "year" && year === y ? "#f3f4f6" : "white",
+              padding: "4px 10px",
+              fontSize: 12,
+              borderRadius: 6,
+              border: "1px solid",
+              borderColor: mode === "year" && year === y ? "#0969da" : "#d0d7de",
+              background: mode === "year" && year === y ? "#ddf4ff" : "#f6f8fa",
+              color: mode === "year" && year === y ? "#0969da" : "#24292f",
+              fontWeight: mode === "year" && year === y ? 600 : 400,
               cursor: "pointer",
             }}
           >
@@ -213,106 +182,126 @@ export default function ContributionHeatmap({ commits, title }: Props) {
           </button>
         ))}
 
-        <div style={{ marginLeft: "auto", fontSize: 12, color: "#666" }}>
+        <div style={{ marginLeft: "auto", fontSize: 12, color: "#636c76", fontWeight: 500 }}>
           {range.label}
         </div>
       </div>
-      {/* Month labels */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
-        {monthLabels.map((m, i) => {
-          const prev = monthLabels[i - 1];
-          const show = i === 0 || prev.month !== m.month;
 
-          return (
-            <div key={i} style={{ width: 12, fontSize: 10, color: "#666" }}>
-              {show ? m.label : ""}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Grid */}
-      <div style={{ overflowX: "auto", paddingBottom: 6 }}>
-        <div style={{ display: "flex", gap: 4, alignItems: "flex-start" }}>
-          {columns.map((col, i) => (
-            <div key={i} style={{ display: "grid", gap: 4 }}>
-              {col.map((c) => (
-                <div
-                  key={c.key + String(c.ts)}
-                  title={`${c.key} / ${formatMinutes(c.minutes)}`}
-                  onClick={() => setSelectedDate(c.key)}
+      {/* Heatmap Area */}
+      <div style={{ border: "1px solid #d0d7de", borderRadius: 6, padding: 16, background: "#fff" }}>
+        <div style={{ overflowX: "auto" }}>
+          <div style={{ display: "inline-block", minWidth: "100%" }}>
+            
+            {/* 月ラベル (絶対配置で位置ずれを防止) */}
+            <div style={{ position: "relative", height: 18, marginLeft: 28, marginBottom: 4 }}>
+              {monthLabels.map((m, i) => (
+                <span
+                  key={i}
                   style={{
-                    cursor: "pointer",
-                    width: 12,
-                    height: 12,
-                    borderRadius: 3,
-                    background: c.inRange ? levelColor(c.level) : "#ffffff",
-                    outline: "1px solid rgba(0,0,0,0.06)",
-                    opacity: c.inRange ? 1 : 0.25,
+                    position: "absolute",
+                    left: m.colIndex * 16, // 12px(セル幅) + 4px(gap) = 16px
+                    fontSize: 10,
+                    color: "#636c76",
                   }}
-                />
+                >
+                  {m.label}
+                </span>
               ))}
             </div>
+
+            <div style={{ display: "flex", gap: 4 }}>
+              {/* 曜日ラベル (月・水・金のみ表示) */}
+              <div style={{ display: "grid", gridTemplateRows: "repeat(7, 12px)", gap: 4, fontSize: 9, color: "#636c76", paddingRight: 4, textAlign: "right", userSelect: "none" }}>
+                <span></span>
+                <span>Mon</span>
+                <span></span>
+                <span>Wed</span>
+                <span></span>
+                <span>Fri</span>
+                <span></span>
+              </div>
+
+              {/* グリッドセル */}
+              <div style={{ display: "flex", gap: 4 }}>
+                {columns.map((col, colIdx) => (
+                  <div key={colIdx} style={{ display: "grid", gridTemplateRows: "repeat(7, 12px)", gap: 4 }}>
+                    {col.map((c) => {
+                      const isSelected = selectedDate === c.key;
+                      return (
+                        <div
+                          key={c.key}
+                          title={`${c.key} / ${formatMinutes(c.minutes)}`}
+                          onClick={() => setSelectedDate(c.key)}
+                          style={{
+                            width: 12,
+                            height: 12,
+                            borderRadius: 2,
+                            backgroundColor: c.inRange ? levelColor(c.level) : "#ffffff",
+                            outline: isSelected ? "2px solid #0969da" : "1px solid rgba(27,31,36,0.06)",
+                            outlineOffset: isSelected ? -1 : 0,
+                            opacity: c.inRange ? 1 : 0.2,
+                            cursor: "pointer",
+                            transition: "transform 0.1s ease",
+                            zIndex: isSelected ? 2 : 1,
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* 凡例 (Legend) */}
+        <div style={{ marginTop: 12, display: "flex", gap: 4, alignItems: "center", justifyContent: "flex-end", fontSize: 11, color: "#636c76" }}>
+          <span>Less</span>
+          {[0, 1, 2, 3, 4].map((lv) => (
+            <span
+              key={lv}
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: 2,
+                backgroundColor: levelColor(lv),
+                outline: "1px solid rgba(27,31,36,0.06)",
+              }}
+            />
           ))}
+          <span>More</span>
         </div>
       </div>
-      {selectedDate &&
-        (() => {
-          const filtered = commits.filter(
-            (c) => dayKey(c.endedAt) === selectedDate,
-          );
-          return (
-            <div style={{ marginTop: 12 }}>
-              <h4>
-                {selectedDate} のコミット ({filtered.length} 件)
-              </h4>
-              {filtered.length === 0 ? (
-                <div style={{ color: "#999", fontSize: 14 }}>
-                  コミットはありません
-                </div>
-              ) : (
-                filtered.map((c) => (
-                  <div
-                    key={c.id}
-                    style={{ padding: 6, borderBottom: "1px solid #eee" }}
-                  >
-                    {new Date(c.endedAt).toLocaleTimeString()} /{" "}
-                    {Math.floor(c.durationMs / 60000)}min
-                    <div style={{ fontSize: 12, color: "#666" }}>{c.note}</div>
-                  </div>
-                ))
-              )}
-            </div>
-          );
-        })()}
 
-      {/* Legend */}
-      <div
-        style={{
-          marginTop: 8,
-          display: "flex",
-          gap: 6,
-          alignItems: "center",
-          fontSize: 12,
-          color: "#666",
-        }}
-      >
-        <span>Less</span>
-        {[0, 1, 2, 3, 4].map((lv) => (
-          <span
-            key={lv}
-            style={{
-              display: "inline-block",
-              width: 12,
-              height: 12,
-              borderRadius: 3,
-              background: levelColor(lv),
-              outline: "1px solid rgba(0,0,0,0.06)",
-            }}
-          />
-        ))}
-        <span>More</span>
-      </div>
+      {/* Selected Day Details */}
+      {selectedDate && (() => {
+        const filtered = commits.filter((c) => dayKey(c.endedAt) === selectedDate);
+        return (
+          <div style={{ marginTop: 12, padding: 12, border: "1px solid #d0d7de", borderRadius: 6, background: "#f6f8fa" }}>
+            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8, color: "#1f2328" }}>
+              {selectedDate} の詳細 ({filtered.length} 件)
+            </div>
+            {filtered.length === 0 ? (
+              <div style={{ color: "#636c76", fontSize: 12 }}>記録はありません</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {filtered.map((c) => (
+                  <div key={c.id} style={{ padding: "6px 8px", background: "#fff", borderRadius: 4, border: "1px solid #e1e4e8" }}>
+                    <div style={{ fontWeight: 500, fontSize: 12, color: "#0969da" }}>
+                      {new Date(c.endedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <span style={{ color: "#57606a", fontWeight: 400, marginLeft: 8 }}>
+                        ({Math.floor(c.durationMs / 60000)}分)
+                      </span>
+                    </div>
+                    {c.note && <div style={{ fontSize: 12, color: "#24292f", marginTop: 2 }}>{c.note}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </section>
   );
 }

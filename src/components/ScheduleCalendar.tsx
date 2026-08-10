@@ -6,7 +6,6 @@ import type {
   Commit,
   Project,
 } from "../logic/types";
-import "./Calendar.css";
 
 type Props = {
   year: number;
@@ -18,7 +17,15 @@ type Props = {
   moveMonth: (diff: number) => void;
 };
 
-const WEEK_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
+const WEEK_LABELS = [
+  { label: "日", color: "text-rose-500" },
+  { label: "月", color: "text-gray-500" },
+  { label: "火", color: "text-gray-500" },
+  { label: "水", color: "text-gray-500" },
+  { label: "木", color: "text-gray-500" },
+  { label: "金", color: "text-gray-500" },
+  { label: "土", color: "text-indigo-500" },
+];
 
 export default function ScheduleCalendar({
   year,
@@ -36,155 +43,148 @@ export default function ScheduleCalendar({
   }, [year, month, projects, memos, commits]);
 
   return (
-    <div style={styles.wrapper}>
-      <div className="calendar-nav-container">
-        {/* 左ボタン */}
-        <button className="nav-button" onClick={() => moveMonth(-1)}>
-          ‹
-        </button>
+    <div className="w-full space-y-4">
+      {/* ナビゲーションヘッダー */}
+      <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-bold text-gray-900">
+            {year}年 <span className="text-indigo-600">{month + 1}月</span>
+          </h2>
+        </div>
 
-        {/* 中央の年月表示 */}
-        <h2 className="month-label">
-          {year}年 {month + 1}月
-        </h2>
-
-        {/* 右ボタン */}
-        <button className="nav-button" onClick={() => moveMonth(1)}>
-          ›
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => moveMonth(-1)}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 active:scale-95"
+            aria-label="前月へ"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={() => moveMonth(1)}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 active:scale-95"
+            aria-label="次月へ"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
       </div>
-      <div style={styles.weekHeader}>
-        {WEEK_LABELS.map((label) => (
-          <div key={label} style={styles.weekCell}>
-            {label}
-          </div>
-        ))}
-      </div>
 
-      <div style={styles.grid}>
-        {cells.map((cell) => {
-          const day = Number(cell.date.slice(-2));
-          const isSelected = selectedDate === cell.date;
+      {/* カレンダーメイングリッド */}
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        {/* 曜日ヘッダー */}
+        <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50/70 text-center text-xs font-bold">
+          {WEEK_LABELS.map(({ label, color }) => (
+            <div key={label} className={`py-2.5 ${color}`}>
+              {label}
+            </div>
+          ))}
+        </div>
 
-          return (
-            <button
-              key={cell.date}
-              type="button"
-              onClick={() => {
-                setSelectedDate(cell.date);
-                onSelectDate?.(cell);
-              }}
-              style={{
-                ...styles.cell,
-                opacity: cell.isCurrentMonth ? 1 : 0.45,
-                background: cell.isCurrendDay ? "#6cc9ff" : "#fff",
-                border: isSelected ? "2px solid #222" : "1px solid #ddd",
-              }}
-            >
-              <div style={styles.dayNumber}>{day}</div>
+        {/* 日付セル */}
+        <div className="grid grid-cols-7 divide-x divide-y divide-gray-100 bg-gray-100/50">
+          {cells.map((cell) => {
+            const day = Number(cell.date.slice(-2));
+            const isSelected = selectedDate === cell.date;
 
-              <div style={styles.items}>
-                {cell.dueProjects.length > 0 && (
-                  <div style={styles.dueText}>
-                    納期 {cell.dueProjects.length}件
-                  </div>
-                )}
+            // プロパティ名の表記揺れ（isCurrendDay / isCurrentDay）の安全策
+            const isToday =
+              (cell as unknown as { isCurrentDay?: boolean }).isCurrentDay ??
+              cell.isCurrendDay ??
+              false;
 
-                {cell.projects.slice(0, 1).map((project) => (
-                  <div
-                    key={project.id}
-                    style={{
-                      ...styles.projectBadge,
-                      backgroundColor: project.color ?? "#4f8cff",
-                    }}
-                    title={project.name}
+            return (
+              <button
+                key={cell.date}
+                type="button"
+                onClick={() => {
+                  setSelectedDate(cell.date);
+                  onSelectDate?.(cell);
+                }}
+                className={`group relative flex min-h-[110px] flex-col p-2 text-left transition ${
+                  cell.isCurrentMonth
+                    ? "bg-white text-gray-900"
+                    : "bg-gray-50/60 text-gray-400"
+                } ${
+                  isSelected
+                    ? "ring-2 ring-inset ring-indigo-600 z-10"
+                    : "hover:bg-indigo-50/30"
+                }`}
+              >
+                {/* 日付表示 */}
+                <div className="mb-1.5 flex items-center justify-between">
+                  <span
+                    className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
+                      isToday
+                        ? "bg-indigo-600 text-white font-bold"
+                        : isSelected
+                        ? "text-indigo-600 font-bold"
+                        : ""
+                    }`}
                   >
-                    {project.name}
-                  </div>
-                ))}
+                    {day}
+                  </span>
+                </div>
 
-                {cell.memos.slice(0, 1).map((memo) => (
-                  <div key={memo.id} style={styles.memoText} title={memo.text}>
-                    • {memo.text}
-                  </div>
-                ))}
+                {/* 内容インジケーター */}
+                <div className="flex flex-1 flex-col justify-between space-y-1">
+                  <div className="space-y-1">
+                    {/* 納期 */}
+                    {cell.dueProjects.length > 0 && (
+                      <div className="inline-flex w-full items-center gap-1 rounded bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700 ring-1 ring-inset ring-rose-600/20">
+                        <span className="h-1 w-1 rounded-full bg-rose-500"></span>
+                        <span className="truncate">納期 {cell.dueProjects.length}件</span>
+                      </div>
+                    )}
 
-                {cell.commits.length > 0 && (
-                  <div style={styles.commitInfo}>
-                    コミット {cell.commits.length}件
+                    {/* 進行中プロジェクト */}
+                    {cell.projects.slice(0, 1).map((project) => (
+                      <div
+                        key={project.id}
+                        className="truncate rounded px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs"
+                        style={{
+                          backgroundColor: project.color ?? "#4f46e5",
+                        }}
+                        title={project.name}
+                      >
+                        {project.name}
+                      </div>
+                    ))}
+
+                    {/* メモ */}
+                    {cell.memos.slice(0, 1).map((memo) => (
+                      <div
+                        key={memo.id}
+                        className="flex items-center gap-1 truncate text-[10px] text-gray-600"
+                        title={memo.text}
+                      >
+                        <span className="text-amber-500">•</span>
+                        <span className="truncate">{memo.text}</span>
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
-            </button>
-          );
-        })}
+
+                  {/* コミット数バッジ */}
+                  {cell.commits.length > 0 && (
+                    <div className="mt-auto pt-1">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-600">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                        {cell.commits.length} commits
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  wrapper: {
-    width: "100%",
-  },
-  title: {
-    marginBottom: 16,
-  },
-  weekHeader: {
-    display: "grid",
-    gridTemplateColumns: "repeat(7, 1fr)",
-    marginBottom: 8,
-  },
-  weekCell: {
-    textAlign: "center",
-    fontWeight: 700,
-    padding: "8px 0",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(7, 1fr)",
-    gap: 8,
-  },
-  cell: {
-    minHeight: 120,
-    background: "#fff",
-    borderRadius: 8,
-    padding: 8,
-    textAlign: "left",
-    cursor: "pointer",
-  },
-  dayNumber: {
-    fontWeight: 700,
-    marginBottom: 8,
-  },
-  items: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 4,
-  },
-  dueText: {
-    fontSize: 12,
-    color: "#c0392b",
-    fontWeight: 700,
-  },
-  projectBadge: {
-    color: "#fff",
-    borderRadius: 6,
-    padding: "2px 6px",
-    fontSize: 12,
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  },
-  memoText: {
-    fontSize: 12,
-    color: "#333",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  },
-  commitInfo: {
-    fontSize: 12,
-    color: "#666",
-  },
-};
