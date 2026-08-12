@@ -1,5 +1,4 @@
 //src/pages/ProjectDetailPage.tsx
-// 今はidbからデータを取ってくる。projectpageはまだlocalstorageのままなので、今後両方ともidbにする予定
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -8,7 +7,6 @@ import {
   loadCommitsIdb,
   saveProjectsIdb,
 } from "../../../logic/storage-idb";
-//import { loadProjects, loadCommits, saveProjects, } from "../logic/storage";
 import type { Project, Commit } from "../../../logic/types";
 import Link from "next/link";
 import { use } from "react";
@@ -41,9 +39,10 @@ export default function ProjectDetailPage({
   const [projectNameInput, setProjectNameInput] = useState("");
   const [isEditingName, setIsEditingName] = useState(false);
   
+  // ギャラリー用: Blobから生成した Object URL を安全に保持する State
+  const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
 
   const refresh = async () => {
-    // idb版のリフレッシュ関数。ProjectsPageの方もこれに合わせて書き換える予定
     const [nextProjects, nextCommits] = await Promise.all([
       loadProjectsIdb(),
       loadCommitsIdb(),
@@ -61,14 +60,18 @@ export default function ProjectDetailPage({
     })();
   }, []);
 
+  // focus 時および pageshow (戻るボタン押下時) にリフレッシュを呼ぶ
   useEffect(() => {
-    // idb版のリフレッシュ関数に合わせて書き換え
-    const onFocus = () => {
+    const onFocusOrPageShow = () => {
       void refresh();
     };
 
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
+    window.addEventListener("focus", onFocusOrPageShow);
+    window.addEventListener("pageshow", onFocusOrPageShow);
+    return () => {
+      window.removeEventListener("focus", onFocusOrPageShow);
+      window.removeEventListener("pageshow", onFocusOrPageShow);
+    };
   }, []);
 
   const project = useMemo(() => {
@@ -78,7 +81,7 @@ export default function ProjectDetailPage({
 
   useEffect(() => {
     if (!project) return;
-    setProjectNameInput(project.name ?? ""); // ← 追加
+    setProjectNameInput(project.name ?? "");
     setWorkMinutesInput(
       project.pomodoroWorkMinutes ? String(project.pomodoroWorkMinutes) : "",
     );
@@ -98,6 +101,23 @@ export default function ProjectDetailPage({
   const commitsWithImage = useMemo(() => {
     return commits.filter((c) => c.image?.blob);
   }, [commits]);
+
+  // Object URL の生成とクリーンアップ（メモリリーク・レンダリングエラーの防止）
+  useEffect(() => {
+    const urls: Record<string, string> = {};
+
+    commitsWithImage.forEach((c) => {
+      if (c.image?.blob) {
+        urls[c.id] = URL.createObjectURL(c.image.blob);
+      }
+    });
+
+    setImageUrls(urls);
+
+    return () => {
+      Object.values(urls).forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [commitsWithImage]);
 
   const totalMs = useMemo(
     () => commits.reduce((sum, c) => sum + c.durationMs, 0),
@@ -186,11 +206,12 @@ export default function ProjectDetailPage({
     setProjects(nextProjects);
     void saveProjectsIdb(nextProjects);
   };
+
   const handleSaveProjectName = () => {
     if (!project) return;
 
     const trimmed = projectNameInput.trim();
-    if (!trimmed) return; // 空文字の場合は変更しない
+    if (!trimmed) return;
 
     const nextProjects = projects.map((p) =>
       p.id === project.id
@@ -212,7 +233,6 @@ export default function ProjectDetailPage({
   const ratio = targetMs ? Math.min(1, totalMs / targetMs) : null;
   const percent = ratio != null ? Math.floor(ratio * 100) : null;
   const pomodoroWorkMinutes = project.pomodoroWorkMinutes ?? null;
-  //const pomodoroBreakMinutes = project.pomodoroBreakMinutes ?? null;
 
   const estimatedPomodoroCount =
     pomodoroWorkMinutes && pomodoroWorkMinutes > 0
@@ -223,86 +243,84 @@ export default function ProjectDetailPage({
     <main className="max-w-3xl mx-auto min-h-screen px-4 py-8 space-y-6 font-sans text-slate-800 antialiased">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-5">
-  {/* タイトル & 編集フォーム */}
-  <div className="flex-1 min-w-[240px]">
-    {isEditingName ? (
-      <div className="flex items-center gap-2">
-        <input
-          type="text"
-          value={projectNameInput}
-          onChange={(e) => setProjectNameInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleSaveProjectName();
-            if (e.key === "Escape") {
-              setProjectNameInput(project.name);
-              setIsEditingName(false);
-            }
-          }}
-          autoFocus
-          className="text-2xl font-extrabold text-slate-900 bg-white border border-sky-500 rounded-xl px-3 py-1 focus:outline-none focus:ring-2 focus:ring-sky-500 w-full"
-        />
-        <button
-          onClick={handleSaveProjectName}
-          className="text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 px-3 py-2 rounded-xl transition-colors shrink-0"
-        >
-          保存
-        </button>
-        <button
-          onClick={() => {
-            setProjectNameInput(project.name);
-            setIsEditingName(false);
-          }}
-          className="text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-xl transition-colors shrink-0"
-        >
-          キャンセル
-        </button>
-      </div>
-    ) : (
-      <div className="flex items-center gap-2 group">
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
-          {project.name}
-        </h1>
-        <button
-          onClick={() => setIsEditingName(true)}
-          className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-          title="プロジェクト名を変更"
-        >
-          {/* 鉛筆アイコン (SVG) */}
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className="flex-1 min-w-[240px]">
+          {isEditingName ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={projectNameInput}
+                onChange={(e) => setProjectNameInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveProjectName();
+                  if (e.key === "Escape") {
+                    setProjectNameInput(project.name);
+                    setIsEditingName(false);
+                  }
+                }}
+                autoFocus
+                className="text-2xl font-extrabold text-slate-900 bg-white border border-sky-500 rounded-xl px-3 py-1 focus:outline-none focus:ring-2 focus:ring-sky-500 w-full"
+              />
+              <button
+                onClick={handleSaveProjectName}
+                className="text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 px-3 py-2 rounded-xl transition-colors shrink-0"
+              >
+                保存
+              </button>
+              <button
+                onClick={() => {
+                  setProjectNameInput(project.name);
+                  setIsEditingName(false);
+                }}
+                className="text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-xl transition-colors shrink-0"
+              >
+                キャンセル
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 group">
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+                {project.name}
+              </h1>
+              <button
+                onClick={() => setIsEditingName(true)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                title="プロジェクト名を変更"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                  />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          <Link
+            href="/"
+            className="text-xs font-semibold text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 py-2 px-3.5 rounded-xl shadow-sm transition-colors"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-            />
-          </svg>
-        </button>
+            ← 戻る
+          </Link>
+          <Link
+            href={`/timer/${projectId}`}
+            className="text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 py-2 px-4 rounded-xl shadow-sm transition-colors"
+          >
+            作業する
+          </Link>
+        </div>
       </div>
-    )}
-  </div>
 
-  <div className="flex items-center gap-2.5">
-    <Link
-      href="/"
-      className="text-xs font-semibold text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 py-2 px-3.5 rounded-xl shadow-sm transition-colors"
-    >
-      ← 戻る
-    </Link>
-    <Link
-      href={`/timer/${projectId}`}
-      className="text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 py-2 px-4 rounded-xl shadow-sm transition-colors"
-    >
-      作業する
-    </Link>
-  </div>
-</div>
-
-      {/* 上：サマリー & 進捗 */}
+      {/* サマリー & 進捗 */}
       <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center">
           <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
@@ -427,7 +445,7 @@ export default function ProjectDetailPage({
         </div>
       </section>
 
-      {/* 中：履歴 */}
+      {/* 履歴 */}
       <section className="space-y-3">
         <h2 className="text-base font-bold text-slate-900">作業履歴</h2>
 
@@ -440,7 +458,7 @@ export default function ProjectDetailPage({
             {commits.map((c) => (
               <li key={c.id}>
                 <Link
-                  href={`/projects/${projectId}/commits/${c.id}`}
+                  href={`/commits/${c.id}`}
                   className="block bg-white border border-slate-200 hover:border-sky-300 rounded-2xl p-4 shadow-sm hover:shadow transition-all group"
                 >
                   <div className="flex items-center justify-between text-xs text-slate-500 pb-2 border-b border-slate-100">
@@ -460,9 +478,9 @@ export default function ProjectDetailPage({
         )}
       </section>
 
-      {/* 下：ギャラリー（仮） */}
+      {/* ギャラリー */}
       <section className="space-y-3 pt-2">
-        <h2 className="text-base font-bold text-slate-900">Gallery（仮）</h2>
+        <h2 className="text-base font-bold text-slate-900">Gallery</h2>
         {commitsWithImage.length === 0 ? (
           <div className="text-center py-10 px-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 text-slate-500 text-sm">
             画像がまだありません（ここに進捗画像が並びます）
@@ -470,19 +488,25 @@ export default function ProjectDetailPage({
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {commitsWithImage.map((c) => {
-              const url = URL.createObjectURL(c.image!.blob);
+              const url = imageUrls[c.id];
 
               return (
                 <div
                   key={c.id}
                   className="bg-white border border-slate-200 rounded-xl p-2 shadow-sm hover:shadow transition-all overflow-hidden"
                 >
-                  <Link href={`/projects/${projectId}/commits/${c.id}`}>
-                    <img
-                      src={url}
-                      alt="commit image"
-                      className="w-full h-28 object-cover rounded-lg border border-slate-100 hover:opacity-90 transition-opacity"
-                    />
+                  <Link href={`/commits/${c.id}`}>
+                    {url ? (
+                      <img
+                        src={url}
+                        alt="commit image"
+                        className="w-full h-28 object-cover rounded-lg border border-slate-100 hover:opacity-90 transition-opacity"
+                      />
+                    ) : (
+                      <div className="w-full h-28 bg-slate-100 rounded-lg flex items-center justify-center text-xs text-slate-400">
+                        Loading...
+                      </div>
+                    )}
                   </Link>
 
                   <div className="text-[11px] text-slate-400 mt-2 text-center">
