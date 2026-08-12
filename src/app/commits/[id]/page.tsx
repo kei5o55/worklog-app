@@ -1,10 +1,15 @@
+// app/commits/[id]/page.tsx
 "use client";
 
+import { useEffect, useState, useMemo, use } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation"; // Pages Routerの場合は `import { useRouter } from "next/router";` に変更
-import { useEffect, useMemo, useState } from "react";
-import { loadProjectsIdb, loadCommitsIdb } from "../../..//logic/storage-idb";
-import type { Project, Commit } from "../../..//logic/types";
+import { useRouter } from "next/navigation";
+import {
+  loadCommitsIdb,
+  loadProjectsIdb,
+  saveCommitsIdb,
+} from "../../../logic/storage-idb";
+import type { Commit, Project } from "../../../logic/types";
 
 function pad2(n: number) {
   return String(n).padStart(2, "0");
@@ -18,109 +23,146 @@ function formatMs(ms: number) {
   return `${pad2(h)}:${pad2(m)}:${pad2(s)}`;
 }
 
-export default function CommitDetailPage() {
-  // ディレクトリ構造に合わせて `commitId` または `id` を取得
-  const params = useParams();
-  const commitId = (params?.commitId ?? params?.id) as string | undefined;
-
-  /* Pages Router (next/router) の場合は以下に差し替え
+export default function CommitDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const router = useRouter();
-  const commitId = (router.query.commitId ?? router.query.id) as string | undefined;
-  */
+  const resolvedParams = use(params);
+  const commitId = resolvedParams.id;
 
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [commitsAll, setCommitsAll] = useState<Commit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [commits, setCommits] = useState<Commit[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  // 編集用 State
+  const [noteInput, setNoteInput] = useState("");
+  const [isEditingNote, setIsEditingNote] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function init() {
-      try {
-        const [loadedProjects, loadedCommits] = await Promise.all([
-          loadProjectsIdb(),
-          loadCommitsIdb(),
-        ]);
-
-        if (cancelled) return;
-
-        setProjects(loadedProjects);
-        setCommitsAll(loadedCommits);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+  const refreshData = async () => {
+    try {
+      const [nextCommits, nextProjects] = await Promise.all([
+        loadCommitsIdb(),
+        loadProjectsIdb(),
+      ]);
+      setCommits(nextCommits);
+      setProjects(nextProjects);
+    } catch (error) {
+      console.error("データの読み込みに失敗しました:", error);
     }
+  };
+
+  // 初回ロード & bfcache (戻る・進む) 対策
+  useEffect(() => {
+    let isMounted = true;
+
+    const init = async () => {
+      try {
+        setLoading(true);
+        await refreshData();
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
 
     void init();
 
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        void init();
+      }
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
     return () => {
-      cancelled = true;
+      isMounted = false;
+      window.removeEventListener("pageshow", handlePageShow);
     };
   }, []);
 
-  // commitId から該当のコミットを直接検索
   const commit = useMemo(() => {
-    if (!commitId) return null;
-    return commitsAll.find((c) => c.id === commitId) ?? null;
-  }, [commitsAll, commitId]);
+    return commits.find((c) => c.id === commitId) ?? null;
+  }, [commits, commitId]);
 
-  // 見つかったコミットの projectId から親プロジェクトを検索
   const project = useMemo(() => {
     if (!commit) return null;
     return projects.find((p) => p.id === commit.projectId) ?? null;
   }, [projects, commit]);
 
   useEffect(() => {
-    if (!commit?.image?.blob) {
+    if (!commit) return;
+
+    setNoteInput(commit.note ?? "");
+
+    if (commit.image?.blob) {
+      const url = URL.createObjectURL(commit.image.blob);
+      setImageUrl(url);
+
+      return () => {
+        URL.revokeObjectURL(url);
+      };
+    } else {
       setImageUrl(null);
-      return;
     }
-
-    const url = URL.createObjectURL(commit.image.blob);
-    setImageUrl(url);
-
-    return () => {
-      URL.revokeObjectURL(url);
-    };
   }, [commit]);
 
-  // ID未指定時
-  if (!commitId) {
-    return (
-      <main className="max-w-2xl mx-auto p-6 text-slate-900">
-        <h2 className="text-lg font-bold">Not found</h2>
-        <Link
-          href="/projects"
-          className="text-sm text-sky-600 hover:underline mt-2 inline-block"
-        >
-          Projects一覧へ
-        </Link>
-      </main>
-    );
-  }
+  const handleSaveNote = async () => {
+    if (!commit) return;
 
-  // 読み込み中
+    const nextCommits = commits.map((c) =>
+      c.id === commit.id ? { ...c, note: noteInput.trim() } : c
+    );
+
+    setCommits(nextCommits);
+    await saveCommitsIdb(nextCommits);
+    setIsEditingNote(false);
+  };
+
+  const handleDeleteCommit = async () => {
+    if (!commit) return;
+    if (!window.confirm("このコミットを削除しますか？")) return;
+
+    const nextCommits = commits.filter((c) => c.id !== commit.id);
+    await saveCommitsIdb(nextCommits);
+
+    // 削除後は /project/[id] (単数形) か トップへリダイレクト
+    if (project) {
+      router.push(`/project/${project.id}`);
+    } else {
+      router.push("/");
+    }
+  };
+
   if (loading) {
     return (
-      <main className="max-w-2xl mx-auto p-6 text-slate-500 text-sm flex items-center gap-2">
-        <div className="w-4 h-4 border-2 border-slate-300 border-t-sky-600 rounded-full animate-spin" />
-        <span>読み込み中...</span>
+      <main className="max-w-2xl mx-auto min-h-screen p-6 text-slate-900 flex items-center justify-center">
+        <div className="p-12 rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 text-slate-400 font-medium text-sm">
+          コミット情報を読み込み中...
+        </div>
       </main>
     );
   }
 
-  // データ未存在時
   if (!commit) {
     return (
-      <main className="max-w-2xl mx-auto p-6 text-slate-900 space-y-3">
-        <h2 className="text-lg font-bold">コミットが見つかりませんでした</h2>
+      <main className="max-w-2xl mx-auto min-h-screen p-6 text-slate-900 space-y-4">
+        <h2 className="text-xl font-bold text-slate-900">
+          コミットが見つかりませんでした
+        </h2>
+        <p className="text-sm text-slate-500">
+          削除されたか、存在しないIDです。
+        </p>
         <div>
           <Link
-            href="/projects"
-            className="text-sm text-sky-600 hover:underline"
+            href="/"
+            prefetch={false}
+            className="inline-flex items-center text-sm font-semibold text-sky-600 hover:text-sky-700 hover:underline"
           >
-            ← プロジェクト一覧へ戻る
+            ← トップページへ戻る
           </Link>
         </div>
       </main>
@@ -128,123 +170,97 @@ export default function CommitDetailPage() {
   }
 
   return (
-    <main className="max-w-2xl mx-auto p-6 space-y-5">
-      {/* ナビゲーション・ヘッダー */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <span className="text-xs font-semibold text-sky-600 tracking-wide uppercase">
-            {project ? project.name : "Unknown Project"}
-          </span>
-          <h1 className="text-xl font-bold text-slate-900">コミット詳細</h1>
-        </div>
+    <main className="max-w-2xl mx-auto min-h-screen px-4 py-8 space-y-6 font-sans text-slate-800 antialiased">
+      {/* ナビゲーション */}
+      <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+        <Link
+          href={project ? `/project/${project.id}` : "/"}
+          prefetch={false}
+          className="text-xs font-semibold text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 py-2 px-3.5 rounded-xl shadow-sm transition-colors"
+        >
+          ← {project ? `${project.name} へ戻る` : "戻る"}
+        </Link>
 
-        <div className="flex items-center gap-3 text-xs font-medium">
-          {project ? (
-            <Link
-              href={`/projects/${project.id}`}
-              className="text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              ← プロジェクトへ戻る
-            </Link>
-          ) : (
-            <Link
-              href="/projects"
-              className="text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              ← 一覧へ戻る
-            </Link>
-          )}
-
-          {project && (
-            <Link
-              href={`/projects/${project.id}/timer`}
-              className="px-3.5 py-2 rounded-xl bg-sky-600 text-white font-semibold hover:bg-sky-500 shadow-sm transition-all"
-            >
-              作業する
-            </Link>
-          )}
-        </div>
+        <button
+          onClick={handleDeleteCommit}
+          className="text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 py-2 px-3.5 rounded-xl transition-colors cursor-pointer"
+        >
+          コミットを削除
+        </button>
       </div>
 
-      {/* メインカード */}
-      <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
-        {/* 作業時間 & 記録日時 */}
-        <div className="flex items-baseline justify-between gap-4 pb-4 border-b border-slate-100 flex-wrap">
-          <div>
-            <span className="text-xs text-slate-400 block mb-1">作業時間</span>
-            <strong className="text-2xl font-bold text-slate-900 tabular-nums">
-              {formatMs(commit.durationMs)}
-            </strong>
-          </div>
-          <div className="text-right">
-            <span className="text-xs text-slate-400 block mb-1">記録日時</span>
-            <span className="text-xs font-medium text-slate-600">
-              {new Date(commit.endedAt).toLocaleString()}
-            </span>
-          </div>
+      {/* メイン詳細カード */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
+        <div>
+          <span className="text-xs font-semibold text-sky-600 uppercase tracking-wider">
+            {project?.name ?? "Unknown Project"}
+          </span>
+          <h1 className="text-3xl font-extrabold text-slate-900 mt-1 tabular-nums">
+            {formatMs(commit.durationMs)}
+          </h1>
+          <p className="text-xs text-slate-400 mt-1">
+            完了日時: {new Date(commit.endedAt).toLocaleString()}
+          </p>
         </div>
 
-        {/* 開始〜終了時間表示 */}
-        <div className="text-xs text-slate-600 bg-slate-50 border border-slate-100 rounded-xl p-3 flex items-center justify-between flex-wrap gap-2">
-          <span>
-            <strong className="text-slate-500 font-medium">開始:</strong>{" "}
-            {new Date(commit.startedAt).toLocaleString()}
-          </span>
-          <span>→</span>
-          <span>
-            <strong className="text-slate-500 font-medium">終了:</strong>{" "}
-            {new Date(commit.endedAt).toLocaleString()}
-          </span>
-        </div>
-
-        {/* メモ */}
-        <div className="space-y-2">
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-            メモ
-          </h3>
-          <div className="bg-slate-50/50 border border-slate-100 rounded-xl p-4">
-            {commit.note?.trim() ? (
-              <p className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">
-                {commit.note}
-              </p>
-            ) : (
-              <p className="text-sm text-slate-400 italic">（メモなし）</p>
+        {/* 作業メモ */}
+        <div className="space-y-2 border-t border-slate-100 pt-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-slate-900">作業メモ</h2>
+            {!isEditingNote && (
+              <button
+                onClick={() => setIsEditingNote(true)}
+                className="text-xs text-sky-600 hover:underline font-medium"
+              >
+                編集
+              </button>
             )}
           </div>
+
+          {isEditingNote ? (
+            <div className="space-y-3">
+              <textarea
+                value={noteInput}
+                onChange={(e) => setNoteInput(e.target.value)}
+                rows={4}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all resize-y"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setIsEditingNote(false)}
+                  className="text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={handleSaveNote}
+                  className="text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  保存
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+              {commit.note?.trim() || "（メモなし）"}
+            </p>
+          )}
         </div>
 
         {/* 添付画像 */}
-        {commit.image && imageUrl && (
-          <div className="space-y-2 pt-2">
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              添付画像
-            </h3>
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50 max-w-lg">
-              <a
-                href={imageUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="block group"
-              >
-                <img
-                  src={imageUrl}
-                  alt={commit.image.name}
-                  className="w-full h-auto object-cover cursor-zoom-in group-hover:opacity-95 transition-opacity"
-                />
-              </a>
+        {imageUrl && (
+          <div className="space-y-2 border-t border-slate-100 pt-4">
+            <h2 className="text-sm font-bold text-slate-900">進捗画像</h2>
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+              <img
+                src={imageUrl}
+                alt="Commit attachments"
+                className="w-full h-auto max-h-[500px] object-contain"
+              />
             </div>
-            <span className="text-[11px] text-slate-400 block">
-              {commit.image.name}
-            </span>
           </div>
         )}
-
-        {/* フッター情報 */}
-        <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-          <span>Commit ID: {commit.id}</span>
-          {project && <span>Project ID: {project.id}</span>}
-        </div>
-      </section>
+      </div>
     </main>
   );
 }
