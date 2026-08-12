@@ -46,33 +46,8 @@ export default function ProjectsPage() {
     setHasMounted(true);
   }, []);
 
-  const testConnect = async () => {
-    try {
-      const response = await fetch(
-        "http://localhost:3001/api/v1/progress_logs",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            progress_log: {
-              title: "WSL2の綺麗な環境からのテスト送信",
-              status: "開通式リベンジ成功",
-            },
-          }),
-        },
-      );
-
-      const data = await response.json();
-      console.log("バックエンドからの返事:", data);
-    } catch (error) {
-      console.error("通信エラーが発生しました:", error);
-    }
-  };
-
   const refresh = async () => {
-    const [nextProjects, nextCommits, nextSessions] = await Promise.all([
+    const [nextProjects, nextCommits, nextSessions,] = await Promise.all([
       loadProjectsIdb(),
       loadCommitsIdb(),
       loadSessionsIdb(),
@@ -236,12 +211,6 @@ export default function ProjectsPage() {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={testConnect}
-            className="text-xs font-semibold text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 transition-colors cursor-pointer"
-          >
-            APIテスト
-          </button>
-          <button
             onClick={() => setIsCreateOpen(true)}
             className="bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm px-4 py-2.5 rounded-xl shadow-sm hover:shadow transition-all cursor-pointer flex items-center gap-1.5"
           >
@@ -258,7 +227,7 @@ export default function ProjectsPage() {
               onClick={() => setActiveTab("active")}
               className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-2 ${
                 activeTab === "active"
-                  ? "bg-slate-900 text-white shadow-sm"
+                  ? "bg-sky-600 text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >
@@ -266,8 +235,8 @@ export default function ProjectsPage() {
               <span
                 className={`px-2 py-0.5 text-xs rounded-full ${
                   activeTab === "active"
-                    ? "bg-slate-700 text-slate-200"
-                    : "bg-slate-200 text-slate-600"
+                    ? "bg-white  text-sky-950"
+                    : "bg-slate-200 text-slate-400"
                 }`}
               >
                 {counts.active}
