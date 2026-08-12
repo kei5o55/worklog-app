@@ -39,6 +39,9 @@ export default function ProjectsPage() {
   const [sessionsAll, setSessionsAll] = useState<WorkSession[]>([]);
   const [hasMounted, setHasMounted] = useState(false);
 
+  // 表示するタブ（active: 進行中, completed: 完了済み）
+  const [activeTab, setActiveTab] = useState<"active" | "completed">("active");
+
   useEffect(() => {
     setHasMounted(true);
   }, []);
@@ -112,6 +115,20 @@ export default function ProjectsPage() {
     return copy;
   }, [projects]);
 
+  // タブで「進行中」と「完了済み」を分類
+  const filteredProjects = useMemo(() => {
+    return sorted.filter((p) =>
+      activeTab === "completed" ? p.completed : !p.completed
+    );
+  }, [sorted, activeTab]);
+
+  // 件数カウント
+  const counts = useMemo(() => {
+    const completed = projects.filter((p) => p.completed).length;
+    const active = projects.length - completed;
+    return { active, completed };
+  }, [projects]);
+
   const latestCommitMap = useMemo(() => {
     const map = new Map<string, Commit>();
 
@@ -163,6 +180,7 @@ export default function ProjectsPage() {
       targetHours,
       pomodoroWorkMinutes,
       pomodoroBreakMinutes,
+      completed: false,
       createdAt: Date.now(),
     };
 
@@ -170,6 +188,23 @@ export default function ProjectsPage() {
     setProjects(nextProjects);
     await saveProjectsIdb(nextProjects);
     setIsCreateOpen(false);
+  };
+
+  // 完了状態の切り替え関数
+  const onToggleComplete = async (project: Project) => {
+    const nextStatus = !project.completed;
+    const actionLabel = nextStatus ? "完了" : "未完了（進行中）に戻す";
+    
+    if (!confirm(`「${project.name}」を${actionLabel}状態に変更しますか？`)) {
+      return;
+    }
+
+    const nextProjects = projects.map((p) =>
+      p.id === project.id ? { ...p, completed: nextStatus } : p
+    );
+
+    setProjects(nextProjects);
+    await saveProjectsIdb(nextProjects);
   };
 
   const onDelete = async (id: string) => {
@@ -215,24 +250,72 @@ export default function ProjectsPage() {
         </div>
       </header>
 
-      {/* Projects List */}
-      <section>
+      {/* Projects List Header & Tabs */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveTab("active")}
+              className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-2 ${
+                activeTab === "active"
+                  ? "bg-slate-900 text-white shadow-sm"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              進行中
+              <span
+                className={`px-2 py-0.5 text-xs rounded-full ${
+                  activeTab === "active"
+                    ? "bg-slate-700 text-slate-200"
+                    : "bg-slate-200 text-slate-600"
+                }`}
+              >
+                {counts.active}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("completed")}
+              className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-2 ${
+                activeTab === "completed"
+                  ? "bg-emerald-700 text-white shadow-sm"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              完了済み
+              <span
+                className={`px-2 py-0.5 text-xs rounded-full ${
+                  activeTab === "completed"
+                    ? "bg-emerald-800 text-emerald-100"
+                    : "bg-slate-200 text-slate-600"
+                }`}
+              >
+                {counts.completed}
+              </span>
+            </button>
+          </div>
+        </div>
+
         {loading ? (
           <div className="flex items-center justify-center p-12 rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 text-slate-400 font-medium text-sm">
             データを読み込み中...
           </div>
-        ) : sorted.length === 0 ? (
+        ) : filteredProjects.length === 0 ? (
           <div className="text-center py-12 px-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50/50">
             <p className="text-slate-500 font-medium">
-              まだプロジェクトがありません。
+              {activeTab === "active"
+                ? "進行中のプロジェクトはありません。"
+                : "完了済みのプロジェクトはありません。"}
             </p>
-            <p className="text-xs text-slate-400 mt-1">
-              右上の「+ 新規プロジェクト」ボタンから作成を始めましょう！
-            </p>
+            {activeTab === "active" && (
+              <p className="text-xs text-slate-400 mt-1">
+                右上の「+ 新規プロジェクト」ボタンから作成を始めましょう！
+              </p>
+            )}
           </div>
         ) : (
           <div className="grid gap-4">
-            {sorted.map((p) => {
+            {filteredProjects.map((p) => {
               const due = p.dueDate?.trim() ? p.dueDate.trim() : "";
               const remain = due ? daysUntil(due) : null;
               const latest = latestCommitMap.get(p.id);
@@ -246,22 +329,38 @@ export default function ProjectsPage() {
               return (
                 <article
                   key={p.id}
-                  className="group relative bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-4"
+                  className={`group relative bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col gap-4 ${
+                    p.completed
+                      ? "border-slate-200 bg-slate-50/60 opacity-80 hover:opacity-100"
+                      : "border-slate-200"
+                  }`}
                 >
                   {/* Top Bar: Name, Status & Actions */}
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                      <h2
+                        className={`text-xl font-bold tracking-tight ${
+                          p.completed
+                            ? "line-through text-slate-500"
+                            : "text-slate-900"
+                        }`}
+                      >
                         {p.name}
                       </h2>
 
-                      {isRunning && (
+                      {p.completed && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          ✓ 完了
+                        </span>
+                      )}
+
+                      {!p.completed && isRunning && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200 animate-pulse">
                           <span className="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
                           作業中
                         </span>
                       )}
-                      {isPaused && (
+                      {!p.completed && isPaused && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                           一時停止中
                         </span>
@@ -284,7 +383,7 @@ export default function ProjectsPage() {
                         <span className="font-medium text-slate-600">
                           納期: {due}
                         </span>
-                        {remain != null && (
+                        {remain != null && !p.completed && (
                           <span
                             className={`font-semibold ${
                               remain < 0
@@ -337,19 +436,39 @@ export default function ProjectsPage() {
                   </div>
 
                   {/* Bottom Action Bar */}
-                  <div className="flex items-center gap-2.5 pt-2">
-                    <Link
-                      href={`/project/${p.id}`}
-                      className="text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-lg transition-colors"
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                    <div className="flex items-center gap-2.5">
+                      <Link
+                        href={`/project/${p.id}`}
+                        className="text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-lg transition-colors"
+                      >
+                        詳細を見る
+                      </Link>
+                      {!p.completed && (
+                        <Link
+                          href={`/timer/${p.id}`}
+                          className="text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 px-4 py-2 rounded-lg shadow-sm transition-colors"
+                        >
+                          作業をはじめる
+                        </Link>
+                      )}
+                    </div>
+
+                    {/* 完了 / 戻す ボタン */}
+                    <button
+                      onClick={() => onToggleComplete(p)}
+                      className={`text-xs font-bold px-3.5 py-2 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 ${
+                        p.completed
+                          ? "bg-slate-200 hover:bg-slate-300 text-slate-700"
+                          : "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200"
+                      }`}
                     >
-                      詳細を見る
-                    </Link>
-                    <Link
-                      href={`/timer/${p.id}`}
-                      className="text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 px-4 py-2 rounded-lg shadow-sm transition-colors"
-                    >
-                      作業をはじめる
-                    </Link>
+                      {p.completed ? (
+                        <>↩ 未完了に戻す</>
+                      ) : (
+                        <>✓ 完了にする</>
+                      )}
+                    </button>
                   </div>
                 </article>
               );

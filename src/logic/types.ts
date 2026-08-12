@@ -11,6 +11,7 @@ export type Project = {
   targetHours?: number;
   pomodoroWorkMinutes?: number;
   pomodoroBreakMinutes?: number;
+  completed:boolean;
 
   // カレンダー表示用
   startDate?: string; // "YYYY-MM-DD"

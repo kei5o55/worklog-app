@@ -44,11 +44,11 @@ function groupCommitsByHour(commits: Commit[]) {
   const hourlyMap = new Map<number, Commit[]>();
 
   for (const commit of commits) {
-    // timestamp または createdAt から時間を取得 (数値型 or ISO文字列に対応)
-    const rawTime = (commit as Record<string, unknown>).createdAt ?? (commit as Record<string, unknown>).timestamp;
+    // startedAt や createdAt 等から時間を取得
+    const rawTime = commit.startedAt ?? (commit as Record<string, unknown>).createdAt ?? (commit as Record<string, unknown>).timestamp;
     if (!rawTime) continue;
 
-    const dateObj = new Date(rawTime as string | number);
+    const dateObj = new Date(rawTime);
     if (isNaN(dateObj.getTime())) continue;
 
     const hour = dateObj.getHours();
@@ -58,6 +58,24 @@ function groupCommitsByHour(commits: Commit[]) {
   }
 
   return hourlyMap;
+}
+
+// 合計作業時間（ミリ秒）を計算
+function calculateTotalMs(commits: Commit[]): number {
+  return commits.reduce((acc, commit) => acc + (commit.durationMs || 0), 0);
+}
+
+// ミリ秒を「○時間○分」フォーマットに整形
+function formatTotalTime(totalMs: number): string {
+  if (totalMs <= 0) return "0分";
+
+  const totalMinutes = Math.floor(totalMs / (1000 * 60));
+  const hours = Math.floor(totalMinutes / 60);
+  const mins = totalMinutes % 60;
+
+  if (hours === 0) return `${mins}分`;
+  if (mins === 0) return `${hours}時間`;
+  return `${hours}時間${mins}分`;
 }
 
 export default function CalendarDayDetail({
@@ -84,18 +102,32 @@ export default function CalendarDayDetail({
   const hourlyCommits = groupCommitsByHour(cell.commits);
   const hours = Array.from({ length: 24 }, (_, i) => i);
 
+  // 作業時間の算出
+  const totalMs = calculateTotalMs(cell.commits);
+  const formattedTotalTime = formatTotalTime(totalMs);
+
   return (
     <div className="mt-6 space-y-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
       {/* ヘッダー */}
-      <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-        <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600">Selected Date</span>
+      <div className="flex flex-col gap-4 border-b border-gray-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600">Selected Date</span>
+            {/* 作業時間累計バッジ */}
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+              <svg className="h-3.5 w-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              合計作業時間: <span className="font-bold">{formattedTotalTime}</span>
+            </span>
+          </div>
           <h3 className="text-xl font-bold text-gray-900">{cell.date} の詳細</h3>
         </div>
+
         <button
           type="button"
           onClick={() => onAddMemo?.(cell.date)}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 active:scale-95"
+          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 active:scale-95"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -207,7 +239,7 @@ export default function CalendarDayDetail({
         {/* 右カラム: 実データ連動 タイムライン */}
         <div className="flex flex-col rounded-lg border border-gray-100 bg-gray-50/30 p-4">
           <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">タイムライン</h4>
-          
+
           <div className="max-h-[460px] space-y-1 overflow-y-auto pr-1">
             {hours.map((hour) => {
               const formattedHour = hour.toString().padStart(2, "0");
