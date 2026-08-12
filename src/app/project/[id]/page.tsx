@@ -486,30 +486,30 @@ export default function ProjectDetailPage({
             画像がまだありません（ここに進捗画像が並びます）
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {commitsWithImage.map((c) => {
               const url = imageUrls[c.id];
 
               return (
                 <div
                   key={c.id}
-                  className="bg-white border border-slate-200 rounded-xl p-2 shadow-sm hover:shadow transition-all overflow-hidden"
+                  className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-sm hover:shadow-md transition-all overflow-hidden"
                 >
                   <Link href={`/commits/${c.id}`}>
                     {url ? (
                       <img
                         src={url}
                         alt="commit image"
-                        className="w-full h-28 object-cover rounded-lg border border-slate-100 hover:opacity-90 transition-opacity"
+                        className="w-full h-48 sm:h-56 object-cover rounded-lg border border-slate-100 hover:opacity-90 transition-opacity"
                       />
                     ) : (
-                      <div className="w-full h-28 bg-slate-100 rounded-lg flex items-center justify-center text-xs text-slate-400">
+                      <div className="w-full h-48 sm:h-56 bg-slate-100 rounded-lg flex items-center justify-center text-xs text-slate-400">
                         Loading...
                       </div>
                     )}
                   </Link>
 
-                  <div className="text-[11px] text-slate-400 mt-2 text-center">
+                  <div className="text-xs text-slate-400 mt-2 text-center font-medium">
                     {new Date(c.endedAt).toLocaleDateString()}
                   </div>
                 </div>

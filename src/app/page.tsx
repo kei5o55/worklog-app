@@ -6,6 +6,7 @@ import CreateProjectModal from "../components/CreateProjectModal";
 import type { Project, Commit, WorkSession } from "../logic/types";
 import ContributionHeatmap from "../components/ContributionHeatmap";
 import CalendarBoard from "../components/CalendarBoard";
+import TotalStatsCard from "../components/TotalStatsCard";
 import HealthCheckButton from "../components/HealthCheckButton";
 import {
   loadProjectsIdb,
@@ -218,6 +219,11 @@ export default function ProjectsPage() {
           </button>
         </div>
       </header>
+      <TotalStatsCard
+        commits={commitsAll}
+        projects={projects}
+        loading={loading}
+      />
 
       {/* Projects List Header & Tabs */}
       <section className="space-y-4">
