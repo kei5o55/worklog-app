@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Commit, Project,DaySchedule } from "../logic/types";
-
+import type { Commit, Project, DaySchedule } from "../logic/types";
 
 type Props = {
   schedules: DaySchedule[];
@@ -21,6 +20,12 @@ function formatTime(h: number, m: number): string {
   return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
 }
 
+// ミリ秒タイムスタンプから "HH:MM" 文字列を生成するヘルパー関数
+function formatTimestamp(ms: number): string {
+  const d = new Date(ms);
+  return formatTime(d.getHours(), d.getMinutes());
+}
+
 export default function DayScheduleTimeline({
   schedules,
   commits,
@@ -37,15 +42,11 @@ export default function DayScheduleTimeline({
       (s) => s.startHour <= hour && s.endHour >= hour
     );
 
-    // その時間の作業ログ
+    // その時間の作業ログ（startedAt 〜 endedAt の時間内にこの hour が含まれるか）
     const slotCommits = commits.filter((c) => {
-      const rawTime =
-        c.startedAt ??
-        (c as Record<string, unknown>).createdAt ??
-        (c as Record<string, unknown>).timestamp;
-      if (!rawTime) return false;
-      const d = new Date(rawTime);
-      return !isNaN(d.getTime()) && d.getHours() === hour;
+      const startH = new Date(c.startedAt).getHours();
+      const endH = new Date(c.endedAt).getHours();
+      return startH <= hour && endH >= hour;
     });
 
     return {
@@ -99,9 +100,12 @@ export default function DayScheduleTimeline({
                       </span>
                     ))}
 
-                    {/* 作業ログ（緑バッジ） */}
+                    {/* 作業ログ（緑バッジ + 開始・終了時刻） */}
                     {slot.commits.map((c) => {
                       const proj = projects.find((p) => p.id === c.projectId);
+                      const startStr = formatTimestamp(c.startedAt);
+                      const endStr = formatTimestamp(c.endedAt);
+
                       return (
                         <span
                           key={c.id}
@@ -110,6 +114,9 @@ export default function DayScheduleTimeline({
                           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                           {proj ? `[${proj.name}] ` : ""}
                           <span className="truncate max-w-[120px]">{c.note || "作業ログ"}</span>
+                          <span className="opacity-75 text-[10px]">
+                            ({startStr}-{endStr})
+                          </span>
                         </span>
                       );
                     })}
@@ -168,10 +175,16 @@ export default function DayScheduleTimeline({
                   <div className="space-y-1.5">
                     {selectedSlot.commits.map((c) => {
                       const proj = projects.find((p) => p.id === c.projectId);
+                      const startStr = formatTimestamp(c.startedAt);
+                      const endStr = formatTimestamp(c.endedAt);
+
                       return (
                         <div key={c.id} className="rounded-lg border border-emerald-100 bg-emerald-50/50 p-2.5 text-xs">
                           {proj && <div className="font-semibold text-emerald-900">[{proj.name}]</div>}
                           <div className="text-emerald-800">{c.note || "メモ無し"}</div>
+                          <div className="text-emerald-600/80 text-[11px] mt-0.5 font-mono">
+                            ⏱ {startStr} 〜 {endStr}
+                          </div>
                         </div>
                       );
                     })}
