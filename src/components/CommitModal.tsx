@@ -38,6 +38,7 @@ function formatMs(ms: number) {
 type Props = {
   open: boolean;
   draft: DraftCommit | null;
+  mode?: "timer" | "direct"; // ← モード判定用フラグを追加（デフォルトはtimer）
   onChange: (next: DraftCommit) => void;
 
   onSave: () => void;
@@ -48,6 +49,7 @@ type Props = {
 export default function CommitModal({
   open,
   draft,
+  mode = "timer",
   onChange,
   onSave,
   onSaveAndContinue,
@@ -108,7 +110,7 @@ export default function CommitModal({
         {/* ヘッダー */}
         <div className="flex items-baseline gap-3 pb-4 border-b border-zinc-100">
           <h2 className="text-xl font-bold tracking-tight text-zinc-900">
-            作業コミット
+            {mode === "direct" ? "ダイレクトコミット" : "作業コミット"}
           </h2>
           <div className="text-xs font-semibold px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-600 border border-zinc-200">
             {draft.projectName} / #{draft.commitNumber}
@@ -118,7 +120,36 @@ export default function CommitModal({
         <div className="mt-5 space-y-5">
           {/* 統計表示 */}
           <div className="grid grid-cols-3 gap-3">
-            <Stat label="今回" value={formatMs(durationMs)} highlight />
+            {/* モードによって「今回」の表示を切り替え */}
+            {mode === "direct" ? (
+              <div className="p-3 rounded-xl border bg-sky-50/40 border-sky-200">
+                <div className="text-xs font-semibold text-zinc-500 mb-1">
+                  作業時間 (分)
+                </div>
+                <div className="flex items-end gap-1.5">
+                  <input
+                    type="number"
+                    min="1"
+                    value={Math.floor(durationMs / 60000)} // ms を 分 に変換して表示
+                    onChange={(e) => {
+                      const mins = Math.max(0, parseInt(e.target.value) || 0);
+                      // 入力された分から逆算して startedAt を上書きする
+                      onChange({
+                        ...draft,
+                        startedAt: draft.endedAt - mins * 60000,
+                      });
+                    }}
+                    className="w-20 bg-white border border-sky-200 rounded-md px-2 py-0.5 text-lg font-mono font-bold text-zinc-900 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 tabular-nums"
+                  />
+                  <span className="text-sm font-bold text-zinc-700 pb-0.5">
+                    分
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <Stat label="今回" value={formatMs(durationMs)} highlight />
+            )}
+
             <Stat label="今日累計" value={formatMs(draft.todayTotalMs)} />
             <Stat label="累計" value={formatMs(draft.projectTotalMs)} />
           </div>
@@ -188,18 +219,15 @@ export default function CommitModal({
                   alt={draft.image.name}
                   className="w-44 h-44 object-cover rounded-lg border border-zinc-200"
                 />
-
                 <div className="mt-2 text-xs text-zinc-500 truncate max-w-[176px]">
                   {draft.image.name}
                 </div>
-
                 <button
                   type="button"
                   onClick={() => {
                     if (draft.image?.previewUrl) {
                       URL.revokeObjectURL(draft.image.previewUrl);
                     }
-
                     onChange({
                       ...draft,
                       image: null,
@@ -232,7 +260,10 @@ export default function CommitModal({
                 ) : (
                   <ul className="list-disc list-inside space-y-1.5">
                     {draft.recentNotes.map((n, i) => (
-                      <li key={i} className="whitespace-pre-wrap leading-relaxed">
+                      <li
+                        key={i}
+                        className="whitespace-pre-wrap leading-relaxed"
+                      >
                         {n}
                       </li>
                     ))}
@@ -257,14 +288,17 @@ export default function CommitModal({
               onClick={onSave}
               className="text-sm font-semibold text-zinc-700 bg-white hover:bg-zinc-100 border border-zinc-300 py-2 px-4 rounded-xl transition-colors cursor-pointer shadow-xs"
             >
-              保存して終了
+              {mode === "direct" ? "保存する" : "保存して終了"}
             </button>
-            <button
-              onClick={onSaveAndContinue}
-              className="text-sm font-semibold text-white bg-sky-600 hover:bg-sky-500 active:bg-sky-700 py-2 px-4 rounded-xl transition-colors cursor-pointer shadow-xs"
-            >
-              保存して続ける
-            </button>
+            {/* ダイレクトコミット時は「保存して続ける（タイマー継続）」ボタンを隠す */}
+            {mode === "timer" && (
+              <button
+                onClick={onSaveAndContinue}
+                className="text-sm font-semibold text-white bg-sky-600 hover:bg-sky-500 active:bg-sky-700 py-2 px-4 rounded-xl transition-colors cursor-pointer shadow-xs"
+              >
+                保存して続ける
+              </button>
+            )}
           </div>
         </div>
       </div>

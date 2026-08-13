@@ -8,11 +8,13 @@ import ContributionHeatmap from "../components/ContributionHeatmap";
 import CalendarBoard from "../components/CalendarBoard";
 import TotalStatsCard from "../components/TotalStatsCard";
 import HealthCheckButton from "../components/HealthCheckButton";
+import CommitModal, { type DraftCommit } from "../components/CommitModal"; // ← 追加
 import {
   loadProjectsIdb,
   saveProjectsIdb,
   loadCommitsIdb,
   loadSessionsIdb,
+  addCommitIdb, // ← 追加
 } from "../logic/storage-idb";
 
 import Link from "next/link";
@@ -31,10 +33,26 @@ function daysUntil(dueDate: string) {
   return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 }
 
+// 今日（0:00以降）の累計時間を算出ヘルパー
+function calcTodayTotalMs(commits: Commit[]): number {
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const todayMs = startOfToday.getTime();
+
+  return commits
+    .filter((c) => c.endedAt >= todayMs)
+    .reduce((acc, c) => acc + (c.durationMs || 0), 0);
+}
+
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [commitsAll, setCommitsAll] = useState<Commit[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // ダイレクトコミット用State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [draftCommit, setDraftCommit] = useState<DraftCommit | null>(null);
+  const [targetProjectId, setTargetProjectId] = useState<string | null>(null);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [sessionsAll, setSessionsAll] = useState<WorkSession[]>([]);
@@ -48,7 +66,7 @@ export default function ProjectsPage() {
   }, []);
 
   const refresh = async () => {
-    const [nextProjects, nextCommits, nextSessions,] = await Promise.all([
+    const [nextProjects, nextCommits, nextSessions] = await Promise.all([
       loadProjectsIdb(),
       loadCommitsIdb(),
       loadSessionsIdb(),
@@ -74,6 +92,37 @@ export default function ProjectsPage() {
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, []);
+
+  // ダイレクトコミットモーダルを開く処理
+  const handleOpenDirectCommit = (project: Project) => {
+    const now = Date.now();
+    const defaultMinutes = 30; // デフォルトで30分の作業としてセット
+
+    // 該当プロジェクトのコミットのみ抽出
+    const projectCommits = commitsAll.filter((c) => c.projectId === project.id);
+    const todayMs = calcTodayTotalMs(projectCommits);
+    const totalMs = projectCommits.reduce((acc, c) => acc + (c.durationMs || 0), 0);
+    const recentNotes = projectCommits
+      .map((c) => c.note)
+      .filter((n): n is string => Boolean(n && n.trim()))
+      .slice(-3);
+
+    setTargetProjectId(project.id);
+    setDraftCommit({
+      projectId: project.id,
+      projectName: project.name,
+      endedAt: now,
+      startedAt: now - defaultMinutes * 60 * 1000,
+      note: "",
+      commitNumber: projectCommits.length + 1,
+      todayTotalMs: todayMs,
+      projectTotalMs: totalMs,
+      recentNotes: recentNotes,
+      image: null,
+    });
+
+    setIsModalOpen(true);
+  };
 
   const sorted = useMemo(() => {
     const copy = [...projects];
@@ -170,7 +219,7 @@ export default function ProjectsPage() {
   const onToggleComplete = async (project: Project) => {
     const nextStatus = !project.completed;
     const actionLabel = nextStatus ? "完了" : "未完了（進行中）に戻す";
-    
+
     if (!confirm(`「${project.name}」を${actionLabel}状態に変更しますか？`)) {
       return;
     }
@@ -219,6 +268,7 @@ export default function ProjectsPage() {
           </button>
         </div>
       </header>
+
       <TotalStatsCard
         commits={commitsAll}
         projects={projects}
@@ -241,7 +291,7 @@ export default function ProjectsPage() {
               <span
                 className={`px-2 py-0.5 text-xs rounded-full ${
                   activeTab === "active"
-                    ? "bg-white  text-sky-950"
+                    ? "bg-white text-sky-950"
                     : "bg-slate-200 text-slate-400"
                 }`}
               >
@@ -296,7 +346,7 @@ export default function ProjectsPage() {
               const latest = latestCommitMap.get(p.id);
               const imageUrl = latest ? getImageUrl(latest) : null;
               const activeSession = sessionsAll.find(
-                (s) => s.projectId === p.id && s.endedAt == null,
+                (s) => s.projectId === p.id && s.endedAt == null
               );
               const isRunning = activeSession?.status === "running";
               const isPaused = activeSession?.status === "paused";
@@ -427,6 +477,14 @@ export default function ProjectsPage() {
                           作業をはじめる
                         </Link>
                       )}
+                      {!p.completed && (
+                        <button
+                          onClick={() => handleOpenDirectCommit(p)} // ← onClick を設定
+                          className="text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 px-4 py-2 rounded-lg shadow-sm transition-colors cursor-pointer"
+                        >
+                          ダイレクトコミット
+                        </button>
+                      )}
                     </div>
 
                     {/* 完了 / 戻す ボタン */}
@@ -456,6 +514,46 @@ export default function ProjectsPage() {
         open={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         onCreate={onCreate}
+      />
+
+      {/* ダイレクトコミットモーダル */}
+      <CommitModal
+        open={isModalOpen}
+        mode="direct"
+        draft={draftCommit}
+        onChange={setDraftCommit}
+        onCancel={() => {
+          setIsModalOpen(false);
+          setDraftCommit(null);
+          setTargetProjectId(null);
+        }}
+        onSave={async () => {
+          if (!draftCommit || !targetProjectId) return;
+
+          await addCommitIdb({
+            id: uid(),
+            projectId: targetProjectId,
+            startedAt: draftCommit.startedAt,
+            endedAt: draftCommit.endedAt,
+            durationMs: draftCommit.endedAt - draftCommit.startedAt,
+            note: draftCommit.note,
+            image: draftCommit.image
+              ? {
+                  name: draftCommit.image.name,
+                  type: draftCommit.image.type,
+                  size: draftCommit.image.size,
+                  blob: draftCommit.image.file,
+                }
+              : null,
+          });
+
+          // クリーンアップとデータ再取得
+          setIsModalOpen(false);
+          setDraftCommit(null);
+          setTargetProjectId(null);
+          await refresh();
+        }}
+        onSaveAndContinue={() => {}}
       />
 
       {/* Calendar & Heatmap */}
