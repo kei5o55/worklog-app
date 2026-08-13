@@ -183,6 +183,7 @@ export default function CommitModal({
               accept="image/*"
               className="block w-full text-xs text-zinc-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-zinc-100 file:text-zinc-700 hover:file:bg-zinc-200 transition-colors cursor-pointer"
               onChange={async (e) => {
+                const input = e.currentTarget; // ★ await 前に要素の参照を保持
                 const file = e.target.files?.[0];
                 if (!file) return;
 
@@ -208,7 +209,7 @@ export default function CommitModal({
                   },
                 });
 
-                e.currentTarget.value = "";
+                input.value = ""; // ★ 退避しておいた変数に対して操作する
               }}
             />
 
