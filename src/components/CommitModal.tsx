@@ -132,8 +132,22 @@ export default function CommitModal({
                     min="1"
                     value={Math.floor(durationMs / 60000)} // ms を 分 に変換して表示
                     onChange={(e) => {
-                      const mins = Math.max(0, parseInt(e.target.value) || 0);
-                      // 入力された分から逆算して startedAt を上書きする
+                      // 1. 空文字の場合は一旦 0 にする
+                      const rawVal = parseInt(e.target.value, 10);
+                      
+                      // 入力途中で空文字（BackSpace全消し）を許容したい場合はここでガード
+                      if (isNaN(rawVal)) {
+                        onChange({
+                          ...draft,
+                          startedAt: draft.endedAt, // 0分にする
+                        });
+                        return;
+                      }
+
+                      // 2. 1 〜 10000 の範囲に収める（クランプ処理）
+                      const mins = Math.min(10000, Math.max(1, rawVal));
+
+                      // 3. 入力された分から逆算して startedAt を上書きする
                       onChange({
                         ...draft,
                         startedAt: draft.endedAt - mins * 60000,
