@@ -279,7 +279,7 @@ export default function TimerPage({
       id: uid(),
       projectId: pid,
       startedAt: Date.now(),
-      note: "",
+      note: note,
       status: "running",
     };
     setSessions((prev) => [s, ...prev]);
@@ -593,12 +593,7 @@ export default function TimerPage({
           <textarea
             value={note}
             onChange={(e) => updateActiveNote(e.target.value)}
-            placeholder={
-              activeSession
-                ? "今やってる作業を書いておく"
-                : "Startしたら入力できる"
-            }
-            disabled={!activeSession}
+            placeholder={"今やってる作業を書いておく"}
             rows={3}
             className="w-full text-sm p-3 rounded-xl border border-zinc-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-100 outline-none resize-y disabled:bg-zinc-50 disabled:text-zinc-400 disabled:cursor-not-allowed transition-all"
           />
