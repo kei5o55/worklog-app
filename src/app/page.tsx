@@ -260,6 +260,12 @@ export default function ProjectsPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <Link
+            href="/users"
+            className="text-xs font-semibold text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 py-2 px-3.5 rounded-xl shadow-sm transition-colors"
+          >
+            ← userpageへ
+          </Link>
           <button
             onClick={() => setIsCreateOpen(true)}
             className="bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm px-4 py-2.5 rounded-xl shadow-sm hover:shadow transition-all cursor-pointer flex items-center gap-1.5"
