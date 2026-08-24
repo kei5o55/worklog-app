@@ -252,7 +252,7 @@ export default function ProjectsPage() {
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
-            Worklog
+            Binder
           </h1>
           <p className="text-xs text-slate-500 mt-1">
             データはブラウザ（IndexedDB）に安全に保存されます
@@ -275,11 +275,11 @@ export default function ProjectsPage() {
         </div>
       </header>
 
-      <TotalStatsCard
+      {/*<TotalStatsCard
         commits={commitsAll}
         projects={projects}
         loading={loading}
-      />
+      />*/}
 
       {/* Projects List Header & Tabs */}
       <section className="space-y-4">

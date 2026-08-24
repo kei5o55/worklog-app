@@ -8,7 +8,11 @@ import {
   loadProjectsIdb,
   loadCommitsIdb,
   loadSessionsIdb,
+  saveProjectsIdb, // 追加: プロジェクト更新用
+  saveCommitsIdb,  // 追加: コミット更新用（実装に合わせて変更してください）
 } from "../../logic/storage-idb";
+
+const BGM_STORAGE_KEY = "user_profile_bgm_url";
 
 export default function UserProfilePage() {
   const [commitsAll, setCommitsAll] = useState<Commit[]>([]);
@@ -16,10 +20,14 @@ export default function UserProfilePage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 作業BGMリンクのローカル管理
+  // 作業BGM/メモのローカル管理
   const [bgmUrl, setBgmUrl] = useState<string>("");
 
-  // Blob画像のURLキャッシュ（メモリリーク防止用）
+  // メモ編集用の状態管理
+  const [editingCommitId, setEditingCommitId] = useState<string | null>(null);
+  const [editNoteText, setEditNoteText] = useState<string>("");
+
+  // Blob画像のURLキャッシュ
   const [imageUrlMap, setImageUrlMap] = useState<Record<string, string>>({});
 
   const refresh = async () => {
@@ -40,6 +48,12 @@ export default function UserProfilePage() {
       await refresh();
       setLoading(false);
     })();
+
+    // BGM URLの復元
+    const savedBgm = localStorage.getItem(BGM_STORAGE_KEY);
+    if (savedBgm) {
+      setBgmUrl(savedBgm);
+    }
   }, []);
 
   useEffect(() => {
@@ -49,6 +63,16 @@ export default function UserProfilePage() {
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, []);
+
+  // BGM/メモの入力・保存
+  const handleBgmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setBgmUrl(val);
+    localStorage.setItem(BGM_STORAGE_KEY, val);
+  };
+
+
+
 
   // 完了済みプロジェクトの抽出
   const completedProjects = useMemo(() => {
@@ -62,7 +86,7 @@ export default function UserProfilePage() {
       .sort((a, b) => b.endedAt - a.endedAt);
   }, [commitsAll]);
 
-  // BlobからのURL生成とクリーンアップ処理（メモリリーク防止）
+  // BlobからのURL生成とクリーンアップ
   useEffect(() => {
     const newMap: Record<string, string> = {};
     imageCommits.forEach((commit) => {
@@ -108,7 +132,7 @@ export default function UserProfilePage() {
           </div>
         </div>
 
-        {/* 作業BGM入力 */}
+        {/* 作業BGM入力（自動保存） */}
         <div className="w-full sm:w-80 bg-slate-50 border border-slate-200 p-3 rounded-xl space-y-2">
           <span className="text-xs font-semibold text-slate-500 flex items-center gap-1">
             🎵 作業用BGM / メモ
@@ -117,7 +141,7 @@ export default function UserProfilePage() {
             type="url"
             placeholder="YouTube / Spotify等のURL"
             value={bgmUrl}
-            onChange={(e) => setBgmUrl(e.target.value)}
+            onChange={handleBgmChange}
             className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-sky-500"
           />
           {bgmUrl && (
@@ -156,22 +180,13 @@ export default function UserProfilePage() {
               {completedProjects.map((project) => (
                 <li
                   key={project.id}
-                  className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between"
+                  className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-2"
                 >
-                  <div className="space-y-0.5">
-                    <span className="text-sm font-semibold text-slate-800 block">
+                  <div className="space-y-0.5 min-w-0 flex-1">
+                    <span className="text-sm font-semibold text-slate-800 block truncate">
                       {project.name}
                     </span>
-                    {project.dueDate && (
-                      <span className="text-[11px] text-slate-400">
-                        納期: {project.dueDate}
-                      </span>
-                    )}
                   </div>
-                  <span
-                    className="w-3 h-3 rounded-full border border-white shadow-sm"
-                    style={{ backgroundColor: project.color || "#3b82f6" }}
-                  />
                 </li>
               ))}
             </ul>
@@ -196,27 +211,50 @@ export default function UserProfilePage() {
               {imageCommits.map((commit) => {
                 const project = projects.find((p) => p.id === commit.projectId);
                 const imageUrl = imageUrlMap[commit.id];
+                const isEditing = editingCommitId === commit.id;
 
                 return (
                   <div
                     key={commit.id}
-                    className="group relative bg-slate-900 rounded-xl overflow-hidden border border-slate-200 aspect-square shadow-sm"
+                    className="group relative bg-slate-900 rounded-xl overflow-hidden border border-slate-200 aspect-square shadow-sm flex flex-col justify-end"
                   >
                     {imageUrl && (
                       <img
                         src={imageUrl}
                         alt={commit.note || "進捗画像"}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200 opacity-90 group-hover:opacity-100"
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-200 opacity-90 group-hover:opacity-100"
                       />
                     )}
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 to-transparent p-2.5 text-white flex flex-col justify-end">
-                      <span className="text-[10px] text-sky-300 font-medium truncate">
+
+                    <div className="relative z-10 bg-gradient-to-t from-slate-950/90 via-slate-950/50 to-transparent p-2.5 text-white space-y-1">
+                      <span className="text-[10px] text-sky-300 font-medium truncate block">
                         {project?.name || "プロジェクト"}
                       </span>
-                      {commit.note && (
-                        <p className="text-xs line-clamp-1 text-slate-200">
-                          {commit.note}
-                        </p>
+
+                      {isEditing ? (
+                        <div className="space-y-1.5">
+                          <input
+                            type="text"
+                            value={editNoteText}
+                            onChange={(e) => setEditNoteText(e.target.value)}
+                            className="w-full text-xs px-2 py-1 bg-slate-800 border border-slate-600 rounded text-white focus:outline-none focus:border-sky-400"
+                            autoFocus
+                          />
+                          <div className="flex gap-1 justify-end">
+                            <button
+                              onClick={() => setEditingCommitId(null)}
+                              className="text-[10px] px-2 py-0.5 bg-slate-700 hover:bg-slate-600 rounded"
+                            >
+                              キャンセル
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-start justify-between gap-1">
+                          <p className="text-xs line-clamp-2 text-slate-200 flex-1">
+                            {commit.note || "（メモなし）"}
+                          </p>
+                        </div>
                       )}
                     </div>
                   </div>

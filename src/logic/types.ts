@@ -1,9 +1,26 @@
 // src/logic/types.ts
 
-export type ProjectId = string;
+
+
+export type IconImage = {
+  name: string;
+  size: number;
+  type: string; // MIMEタイプ (例: image/png)
+  blob: Blob;
+};
+
+export type User = {
+  id: string;
+  name: string;
+  icon?: IconImage;
+  bio?: string;
+  bgmUrl?: string; // 作業BGMリンク用
+  createdAt?: number;
+  updatedAt?: number;
+};
 
 export type Project = {
-  id: ProjectId;
+  id: string;
   name: string;
   dueDate?: string; // "YYYY-MM-DD"
   memo?: string;
@@ -25,7 +42,7 @@ export type TimerMode = "idle" | "work" | "break";
 
 export type WorkSession = {
   id: string;
-  projectId: ProjectId;
+  projectId: string;
   startedAt: number;
   endedAt?: number;
   note: string;
