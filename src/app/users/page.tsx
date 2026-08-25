@@ -10,12 +10,13 @@ import {
   loadSessionsIdb,
   saveProjectsIdb, // 追加: プロジェクト更新用
   saveCommitsIdb,  // 追加: コミット更新用（実装に合わせて変更してください）
+  loadUserProfileIdb,
 } from "../../logic/storage-idb";
 
 const BGM_STORAGE_KEY = "user_profile_bgm_url";
 
 // 1. フル要素が揃っているユーザー
-export const user: User = {
+export const initialuUser: User = {
   id: "usr_01HGB8Z9K1M3N4P5Q6R7S8T9U0",
   name: "test user",
   icon: {
@@ -32,12 +33,13 @@ export const user: User = {
 export default function UserProfilePage() {
   const [commitsAll, setCommitsAll] = useState<Commit[]>([]);
   const [sessionsAll, setSessionsAll] = useState<WorkSession[]>([]);
+  const [user,setUserProfile]=useState<User>(initialuUser);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [isEditingName, setIsEditingName] = useState(false);
 
-  const [UserNameInput,setUserNameInput] = useState<string>("");//名前用state
+  const [UserNameInput,setUserNameInput] = useState<string>("");//名前用stateで、このUserNNAmeInputに描いた名前が記録されてるので、これをidbsaveに渡す感じ
   const [UserBioInput,setUserBioInput] = useState<string>("");//bio用state
 
   // 作業BGM/メモのローカル管理
@@ -53,15 +55,17 @@ export default function UserProfilePage() {
   
 
   const refresh = async () => {
-    const [nextProjects, nextCommits, nextSessions] = await Promise.all([
+    const [nextProjects, nextCommits, nextSessions,nextUser] = await Promise.all([
       loadProjectsIdb(),
       loadCommitsIdb(),
       loadSessionsIdb(),
+      loadUserProfileIdb(),
     ]);
 
     setProjects(nextProjects);
     setCommitsAll(nextCommits);
     setSessionsAll(nextSessions);
+    setUserProfile(nextUser);
   };
 
   useEffect(() => {

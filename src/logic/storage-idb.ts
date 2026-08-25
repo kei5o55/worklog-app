@@ -1,5 +1,6 @@
 import { openDB, type DBSchema } from "idb";
-import type { Project, WorkSession, Commit, CalendarMemo, DaySchedule, User } from "./types";
+import type { Project, WorkSession, Commit, CalendarMemo, DaySchedule, User} from "./types";
+import {initialuUser} from "./types";
 
 export const IDB_NAME = "worklog-db";
 export const IDB_VERSION = 3; // userProfileストア追加のためバージョンアップ (2 -> 3)
@@ -342,11 +343,11 @@ export async function clearDaySchedulesIdb(): Promise<void> {
 }
 
 // ===== User Profile (追加) =====
-export async function loadUserProfileIdb(): Promise<User | null> {
+export async function loadUserProfileIdb(): Promise<User> {
   const db = await dbPromise;
-  if (!db) return null;
+  if (!db) return initialuUser;
   const user = await db.get(STORE_NAMES.userProfile, CURRENT_USER_KEY);
-  return user ? normalizeUserProfile(user) : null;
+  return user ? normalizeUserProfile(user) : initialuUser;
 }
 
 export async function saveUserProfileIdb(user: User): Promise<void> {
