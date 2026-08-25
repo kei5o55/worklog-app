@@ -115,7 +115,7 @@ export const initialuUser: User = {
     height: 150,
   },
   bio: "なんふぇ？",
-  bgmUrl: "https://www.youtube.com/watch?v=jfKfPfyJRdk",
+  bgmUrl: "test",
   createdAt: 1704067200000, // 2024-01-01T00:00:00.000Z
   updatedAt: 1709251200000, // 2024-03-01T00:00:00.000Z
 };

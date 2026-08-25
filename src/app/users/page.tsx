@@ -11,6 +11,7 @@ import {
   saveProjectsIdb, // 追加: プロジェクト更新用
   saveCommitsIdb,  // 追加: コミット更新用（実装に合わせて変更してください）
   loadUserProfileIdb,
+  saveUserProfileIdb,
 } from "../../logic/storage-idb";
 
 const BGM_STORAGE_KEY = "user_profile_bgm_url";
@@ -42,7 +43,6 @@ export default function UserProfilePage() {
   const [UserNameInput,setUserNameInput] = useState<string>("");//名前用stateで、このUserNNAmeInputに描いた名前が記録されてるので、これをidbsaveに渡す感じ
   const [UserBioInput,setUserBioInput] = useState<string>("");//bio用state
 
-  // 作業BGM/メモのローカル管理
   const [bgmUrl, setBgmUrl] = useState<string>("");
 
   // メモ編集用の状態管理
@@ -93,12 +93,32 @@ export default function UserProfilePage() {
   // BGM/メモの入力・保存
   const handleBgmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
+    console.log("test",val)
     setBgmUrl(val);
     localStorage.setItem(BGM_STORAGE_KEY, val);
+
+    const updatedUser: User = {
+      ...user, // 既存のユーザー情報（id, name, bio等）を保持
+      bgmUrl: val,
+      updatedAt: Date.now(),
+    };
+
+    setUserProfile(updatedUser);
+    // 4. IndexedDB の保存関数へ渡す
+    saveUserProfileIdb(updatedUser); // ご自身のIndexedDB保存関数名に合わせて変更してください
+
   };
 
-  const handleSaveUserName=()=>{
-    console.log("test")
+  const handleUserNameChange=()=>{
+
+    const updatedUser: User={
+      ...user,
+      name: UserNameInput,
+      updatedAt: Date.now(),
+    };
+
+    setUserProfile(updatedUser);
+    saveUserProfileIdb(updatedUser);
     setIsEditingName(false);
   };
 
@@ -166,7 +186,7 @@ export default function UserProfilePage() {
                             value={UserNameInput}
                             onChange={(e) => setUserNameInput(e.target.value)}
                             onKeyDown={(e) => {
-                            if (e.key === "Enter") handleSaveUserName();
+                            if (e.key === "Enter") handleUserNameChange();
                             if (e.key === "Escape") {
                                 setUserNameInput(user.name);
                                 setIsEditingName(false);
@@ -176,7 +196,7 @@ export default function UserProfilePage() {
                             className="text-2xl font-extrabold text-slate-900 bg-white border border-sky-500 rounded-xl px-3 py-1 focus:outline-none focus:ring-2 focus:ring-sky-500 w-full"
                         />
                         <button
-                            onClick={handleSaveUserName}
+                            onClick={handleUserNameChange}
                             className="text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 px-3 py-2 rounded-xl transition-colors shrink-0"
                         >
                             保存
@@ -230,18 +250,18 @@ export default function UserProfilePage() {
           <input
             type="url"
             placeholder="YouTube / Spotify等のURL"
-            value={bgmUrl}
+            value={user.bgmUrl}
             onChange={handleBgmChange}
             className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-sky-500"
           />
-          {bgmUrl && (
+          {user.bgmUrl && (
             <a
-              href={bgmUrl}
+              href={user.bgmUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-sky-600 hover:underline block truncate font-medium"
             >
-              ▶ BGMを開く: {bgmUrl}
+              ▶ BGMを開く: {user.bgmUrl}
             </a>
           )}
         </div>
