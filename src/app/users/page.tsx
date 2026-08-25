@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import type { Project, Commit, WorkSession,User } from "../../logic/types";
 import TotalStatsCard from "../../components/TotalStatsCard";
+import UserProfileModal from "../../components/UserProfileModal";
 import Link from "next/link";
 import {
   loadProjectsIdb,
@@ -39,6 +40,10 @@ export default function UserProfilePage() {
   const [loading, setLoading] = useState(true);
 
   const [isEditingName, setIsEditingName] = useState(false);
+
+  //プロフィール編集用state 
+  const [isEdit,setisEdit] = useState(false);
+  const [isEditOpen,setisEditOpen]=useState(false);
 
   const [UserNameInput,setUserNameInput] = useState<string>("");//名前用stateで、このUserNNAmeInputに描いた名前が記録されてるので、これをidbsaveに渡す感じ
   const [UserBioInput,setUserBioInput] = useState<string>("");//bio用state
@@ -240,6 +245,11 @@ export default function UserProfilePage() {
                 </div>
             <p className="text-sm text-slate-500">{user.bio}</p>
           </div>
+          <button onClick={()=>setisEditOpen(true)} 
+                  className="bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm px-4 py-2.5 rounded-xl shadow-sm hover:shadow transition-all cursor-pointer flex items-center gap-1.5"> 
+            test
+          </button>
+          
         </div>
 
         {/* 作業BGM入力（自動保存） */}
@@ -373,7 +383,9 @@ export default function UserProfilePage() {
             </div>
           )}
         </section>
+        <UserProfileModal open={isEditOpen} onClose={() => setisEditOpen(false)}></UserProfileModal>
       </div>
+      
     </div>
   );
 }
