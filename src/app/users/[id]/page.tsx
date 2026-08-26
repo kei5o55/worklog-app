@@ -61,7 +61,8 @@ export default function UserProfilePage({
 
     // 自分のページを見ている場合のみ IndexedDB のプロフィールを適用
     if (isMe && nextUser) {
-      setUserProfile(nextUser);
+      //setUserProfile(nextUser);
+      console.log("idbみてる");
     }
   };
 
@@ -70,7 +71,7 @@ export default function UserProfilePage({
     setUserProfile(targetUser);
     void (async () => {
       setLoading(true);
-      await refresh();
+      //await refresh();
       setLoading(false);
     })();
   }, [userIdFromParams, targetUser]);
