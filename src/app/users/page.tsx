@@ -9,12 +9,9 @@ import {
   loadProjectsIdb,
   loadCommitsIdb,
   loadSessionsIdb,
-  saveProjectsIdb, // 追加: プロジェクト更新用
-  saveCommitsIdb,  // 追加: コミット更新用（実装に合わせて変更してください）
   loadUserProfileIdb,
   saveUserProfileIdb,
 } from "../../logic/storage-idb";
-import { completeTraverseNavigation } from "next/dist/client/components/segment-cache/navigation";
 
 const BGM_STORAGE_KEY = "user_profile_bgm_url";
 
@@ -42,7 +39,6 @@ export default function UserProfilePage() {
   const [isEditOpen,setisEditOpen]=useState(false);
 
   const [UserNameInput,setUserNameInput] = useState<string>("");//名前用stateで、このUserNNAmeInputに描いた名前が記録されてるので、これをidbsaveに渡す感じ
-  const [bgmUrl, setBgmUrl] = useState<string>("");
 
   // メモ編集用の状態管理
   const [editingCommitId, setEditingCommitId] = useState<string | null>(null);
@@ -73,12 +69,6 @@ export default function UserProfilePage() {
       await refresh();
       setLoading(false);
     })();
-
-    // BGM URLの復元
-    const savedBgm = localStorage.getItem(BGM_STORAGE_KEY);
-    if (savedBgm) {
-      setBgmUrl(savedBgm);
-    }
   }, []);
 
   useEffect(() => {
@@ -88,25 +78,6 @@ export default function UserProfilePage() {
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, []);
-
-  // BGM/メモの入力・保存
-  const handleBgmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    console.log("test",val)
-    setBgmUrl(val);
-    localStorage.setItem(BGM_STORAGE_KEY, val);
-
-    const updatedUser: User = {
-      ...user, // 既存のユーザー情報（id, name, bio等）を保持
-      bgmUrl: val,
-      updatedAt: Date.now(),
-    };
-
-    setUserProfile(updatedUser);
-    // 4. IndexedDB の保存関数へ渡す
-    saveUserProfileIdb(updatedUser); // ご自身のIndexedDB保存関数名に合わせて変更してください
-
-  };
 
   const handleUserNameChange=()=>{
 
