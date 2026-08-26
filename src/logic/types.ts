@@ -11,7 +11,7 @@ export type IconImage = {//railsのアクティブストレージでurlを受け
 export type User = {
   id: string;
   name: string;
-  icon?: IconImage;
+  icon?: string;
   bio?: string;
   bgmUrl?: string; // 作業BGMリンク用
   createdAt?: number;
@@ -109,11 +109,7 @@ export type CalendarCell = {
 export const initialuUser: User = {
   id: "usr_01HGB8Z9K1M3N4P5Q6R7S8T9U0",
   name: "dbに接続できないよぅ",
-  icon: {
-    url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
-    width: 150,
-    height: 150,
-  },
+  icon:"https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
   bio: "なんふぇ？",
   bgmUrl: "test",
   createdAt: 1704067200000, // 2024-01-01T00:00:00.000Z

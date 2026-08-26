@@ -14,6 +14,7 @@ import {
   loadUserProfileIdb,
   saveUserProfileIdb,
 } from "../../logic/storage-idb";
+import { completeTraverseNavigation } from "next/dist/client/components/segment-cache/navigation";
 
 const BGM_STORAGE_KEY = "user_profile_bgm_url";
 
@@ -21,11 +22,7 @@ const BGM_STORAGE_KEY = "user_profile_bgm_url";
 export const initialuUser: User = {
   id: "usr_01HGB8Z9K1M3N4P5Q6R7S8T9U0",
   name: "test user",
-  icon: {
-    url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
-    width: 150,
-    height: 150,
-  },
+  icon:  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
   bio: "ReactとTypeScriptで個人開発中",
   bgmUrl: "https://www.youtube.com/watch?v=jfKfPfyJRdk",
   createdAt: 1704067200000, // 2024-01-01T00:00:00.000Z
@@ -42,7 +39,6 @@ export default function UserProfilePage() {
   const [isEditingName, setIsEditingName] = useState(false);
 
   //プロフィール編集用state 
-  const [isEdit,setisEdit] = useState(false);
   const [isEditOpen,setisEditOpen]=useState(false);
 
   const [UserNameInput,setUserNameInput] = useState<string>("");//名前用stateで、このUserNNAmeInputに描いた名前が記録されてるので、これをidbsaveに渡す感じ
@@ -135,12 +131,24 @@ export default function UserProfilePage() {
     return projects.filter((p) => p.completed);
   }, [projects]);
 
+  const latestCommits = useMemo(() => {
+    const map = new Map<string, Commit>();
+    for (const commit of commitsAll) {
+      const existing = map.get(commit.projectId);
+      if (!existing || commit.endedAt > existing.endedAt && commit.image) {//画像があるコミットかつ、最新のものをフィルターして配列に
+        map.set(commit.projectId, commit);
+      }
+    }
+    return Array.from(map.values());
+  }, [commitsAll]); // commits が更新された時だけ再計算される
+
   // 画像付きコミットの抽出（最新順）
   const imageCommits = useMemo(() => {
-    return commitsAll
+    return latestCommits
       .filter((c) => c.image?.blob)
+      .filter((c) => completedProjects.some((p)=>p.id===c.projectId))
       .sort((a, b) => b.endedAt - a.endedAt);
-  }, [commitsAll]);
+  }, [latestCommits]);
 
   // BlobからのURL生成とクリーンアップ
   useEffect(() => {
@@ -383,7 +391,7 @@ export default function UserProfilePage() {
             </div>
           )}
         </section>
-        <UserProfileModal open={isEditOpen} onClose={() => setisEditOpen(false)}></UserProfileModal>
+        <UserProfileModal open={isEditOpen} onClose={() => setisEditOpen(false)} currentUser={user}></UserProfileModal>
       </div>
       
     </div>
