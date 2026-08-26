@@ -12,6 +12,7 @@ export type User = {
   id: string;
   name: string;
   icon?: string;
+  iconBlob?: Blob | File;
   bio?: string;
   bgmUrl?: string; // 作業BGMリンク用
   createdAt?: number;
