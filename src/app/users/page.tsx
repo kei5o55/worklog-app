@@ -12,7 +12,6 @@ import {
   loadSessionsIdb,
   loadUserProfileIdb,
   saveUserProfileIdb,
-  saveCommitsIdb,
 } from "../../logic/storage-idb";
 
 // 初期ユーザーデータ
