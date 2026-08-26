@@ -42,8 +42,6 @@ export default function UserProfilePage() {
   const [isEditOpen,setisEditOpen]=useState(false);
 
   const [UserNameInput,setUserNameInput] = useState<string>("");//名前用stateで、このUserNNAmeInputに描いた名前が記録されてるので、これをidbsaveに渡す感じ
-  const [UserBioInput,setUserBioInput] = useState<string>("");//bio用state
-
   const [bgmUrl, setBgmUrl] = useState<string>("");
 
   // メモ編集用の状態管理
@@ -122,9 +120,6 @@ export default function UserProfilePage() {
     saveUserProfileIdb(updatedUser);
     setIsEditingName(false);
   };
-
-
-
 
   // 完了済みプロジェクトの抽出
   const completedProjects = useMemo(() => {
@@ -265,13 +260,6 @@ export default function UserProfilePage() {
           <span className="text-xs font-semibold text-slate-500 flex items-center gap-1">
             🎵 作業用BGM / メモ
           </span>
-          <input
-            type="url"
-            placeholder="YouTube / Spotify等のURL"
-            value={user.bgmUrl}
-            onChange={handleBgmChange}
-            className="w-full text-xs px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-sky-500"
-          />
           {user.bgmUrl && (
             <a
               href={user.bgmUrl}
@@ -391,7 +379,7 @@ export default function UserProfilePage() {
             </div>
           )}
         </section>
-        <UserProfileModal open={isEditOpen} onClose={() => setisEditOpen(false)} currentUser={user}></UserProfileModal>
+        <UserProfileModal open={isEditOpen} onClose={() => setisEditOpen(false)} currentUser={user} onSuccess={setUserProfile} ></UserProfileModal>
       </div>
       
     </div>

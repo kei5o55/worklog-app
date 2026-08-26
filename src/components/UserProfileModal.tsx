@@ -1,19 +1,20 @@
 import { useState, } from "react";
 import type { ChangeEvent,FormEvent } from "react";
+import { saveUserProfileIdb } from "../logic/storage-idb";
 import type { User } from "../logic/types";
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  currentUser?: User; // 初期値として渡す既存のユーザーデータ
-  onSubmit: (formData: FormData) => Promise<void> | void; // 親コンポーネントへ送信する関数
+  currentUser: User; // 初期値として渡す既存のユーザーデータ
+  onSuccess: (updatedUser: User) => void; // 親コンポーネントへ送信する関数
 };
 
 export default function UserProfileModal({
   open,
   onClose,
   currentUser,
-  onSubmit,
+  onSuccess,
 }: Props) {
   // フォームの状態
   const [name, setName] = useState(currentUser?.name ?? "");
@@ -42,19 +43,20 @@ export default function UserProfileModal({
   // フォーム送信処理
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    console.log("保存押された");
     setIsSubmitting(true);
 
     try {
-      // Active Storage 連携を考慮し FormData で送れるように構築
-      const formData = new FormData();
-      formData.append("user[name]", name);
-      formData.append("user[bio]", bio);
-      formData.append("user[bgm_url]", bgmUrl);
-      if (iconFile) {
-        formData.append("user[icon]", iconFile);
-      }
+      const updatedUser:User={
+        ...currentUser,
+        id:currentUser.id,
+        name:name,
+        bio:bio,
+        bgmUrl:bgmUrl,
+      };
 
-      await onSubmit(formData);
+      await saveUserProfileIdb(updatedUser);
+      onSuccess(updatedUser); // 親の state 更新用関数を呼ぶ
       onClose();
     } catch (error) {
       console.error("Failed to update profile:", error);
