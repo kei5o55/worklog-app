@@ -29,11 +29,6 @@ export type Project = {
   pomodoroWorkMinutes?: number;
   pomodoroBreakMinutes?: number;
   completed:boolean;
-
-  // カレンダー表示用
-  startDate?: string; // "YYYY-MM-DD"
-  endDate?: string; // "YYYY-MM-DD"
-  color?: string; // 例: "#4f8cff"
 };
 
 export type WorkSessionStatus = "running" | "paused";

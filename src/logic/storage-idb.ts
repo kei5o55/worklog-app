@@ -79,9 +79,6 @@ export function normalizeProject(p: Project): Project {
     targetHours: th,
     pomodoroWorkMinutes: pwm,
     pomodoroBreakMinutes: pbm,
-    startDate: normalizeString((p as any).startDate),
-    endDate: normalizeString((p as any).endDate),
-    color: normalizeString((p as any).color),
   };
 }
 
