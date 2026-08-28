@@ -6,7 +6,6 @@ import CreateProjectModal from "../components/CreateProjectModal";
 import type { Project, Commit, WorkSession,ApiProjectResponse } from "../logic/types";
 import ContributionHeatmap from "../components/ContributionHeatmap";
 import CalendarBoard from "../components/CalendarBoard";
-import TotalStatsCard from "../components/TotalStatsCard";
 import HealthCheckButton from "../components/HealthCheckButton";
 import CommitModal, { type DraftCommit } from "../components/CommitModal"; // ← 追加
 import {
@@ -20,6 +19,7 @@ import {
 import { loadProjects,createProject} from "../logic/api-request";
 
 import Link from "next/link";
+import next from "next";
 
 function uid() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -69,8 +69,8 @@ export default function ProjectsPage() {
 
   const refresh = async () => {
     const [nextProjects, nextCommits, nextSessions] = await Promise.all([
-      loadProjectsIdb(),
-      //loadProjects(),
+      //loadProjectsIdb(),
+      loadProjects(),
       loadCommitsIdb(),
       loadSessionsIdb(),
     ]);
@@ -219,6 +219,13 @@ export default function ProjectsPage() {
     setIsCreateOpen(false);
   };
 
+  const onCreate2 = async (input: NewProjectInput) => {
+    await createProject(input);
+    const nextProjects = await loadProjects(); // ← await を追加！
+    setProjects(nextProjects);
+    setIsCreateOpen(false);
+  };
+
   // 完了状態の切り替え関数
   const onToggleComplete = async (project: Project) => {
     const nextStatus = !project.completed;
@@ -278,12 +285,6 @@ export default function ProjectsPage() {
           </button>
         </div>
       </header>
-
-      {/*<TotalStatsCard
-        commits={commitsAll}
-        projects={projects}
-        loading={loading}
-      />*/}
 
       {/* Projects List Header & Tabs */}
       <section className="space-y-4">
@@ -523,8 +524,8 @@ export default function ProjectsPage() {
       <CreateProjectModal
         open={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
-        onCreate={onCreate}
-        //onCreate={createProject}　バックエンド連携の時はこっちにスイッチ
+        //onCreate={onCreate}
+        onCreate={onCreate2}　//バックエンド連携の時はこっちにスイッチ
       />
 
       {/* ダイレクトコミットモーダル */}

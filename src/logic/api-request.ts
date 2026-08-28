@@ -48,11 +48,12 @@ export const createProject = async (inputData: NewProjectInput): Promise<Project
       body: JSON.stringify({
         project: {
           name: inputData.name,
-          due_date: inputData.dueDate,
+          dueDate: inputData.dueDate,
+          completed:false,//dbでdefault：falseだけど一応
           memo: inputData.memo,
-          target_hours: inputData.targetHours,
-          pomodoro_break_minutes: inputData.pomodoroBreakMinutes,
-          pomodoro_break_work_minutes: inputData.pomodoroWorkMinutes,
+          targetHours: inputData.targetHours,
+          pomodoroBreakMinutes: inputData.pomodoroBreakMinutes,
+          pomodoroWorkMinutes: inputData.pomodoroWorkMinutes,
         },
       }),
     });
