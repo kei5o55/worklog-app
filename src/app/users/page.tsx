@@ -338,7 +338,6 @@ export default function UserProfilePage() {
               {completedProjects.length}
             </span>
           </h3>
-
           {completedProjects.length === 0 ? (
             <p className="text-xs text-slate-400 py-4 text-center">
               完了したプロジェクトはまだありません。
@@ -346,15 +345,18 @@ export default function UserProfilePage() {
           ) : (
             <ul className="space-y-2.5">
               {completedProjects.map((project) => (
-                <li
-                  key={project.id}
-                  className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-2"
-                >
-                  <div className="space-y-0.5 min-w-0 flex-1">
-                    <span className="text-sm font-semibold text-slate-800 block truncate">
-                      {project.name}
-                    </span>
-                  </div>
+                <li key={project.id}>
+                  {/* Link に flex やパディングなどのスタイルをまとめて移す */}
+                  <Link
+                    href={`/project/${project.id}`}
+                    className="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl p-3 flex items-center justify-between gap-2 transition-colors duration-150"
+                  >
+                    <div className="space-y-0.5 min-w-0 flex-1">
+                      <span className="text-sm font-semibold text-slate-800 block truncate">
+                        {project.name}
+                      </span>
+                    </div>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -364,7 +366,7 @@ export default function UserProfilePage() {
         {/* 右側: 保存した進捗画像ギャラリー */}
         <section className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <span>🖼️</span> 作業進捗ギャラリー
+            <span>🖼️</span> 完成進捗ギャラリー
             <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
               {imageCommits.length}
             </span>

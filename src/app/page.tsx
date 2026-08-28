@@ -17,7 +17,7 @@ import {
   addCommitIdb, // ← 追加
 } from "../logic/storage-idb";
 
-import { loadProjects } from "../logic/api-request";
+import { loadProjects,createProject} from "../logic/api-request";
 
 import Link from "next/link";
 
@@ -524,6 +524,7 @@ export default function ProjectsPage() {
         open={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         onCreate={onCreate}
+        //onCreate={createProject}　バックエンド連携の時はこっちにスイッチ
       />
 
       {/* ダイレクトコミットモーダル */}

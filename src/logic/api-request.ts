@@ -1,3 +1,4 @@
+import type { NewProjectInput } from "../components/CreateProjectModal";
 import type { Project ,ApiProjectResponse, } from "./types";
 
 const BASE_URL = 'http://localhost:3001/api/v1/projects';
@@ -37,7 +38,7 @@ export const loadProjects = async (): Promise<Project[]> => {
 };
 
 //プロジェクトを新規作成する API
-export const createProject = async (inputData: Project): Promise<Project | null> => {
+export const createProject = async (inputData: NewProjectInput): Promise<Project | null> => {
   try {
     const response = await fetch(BASE_URL, {
       method: 'POST',
@@ -50,6 +51,8 @@ export const createProject = async (inputData: Project): Promise<Project | null>
           due_date: inputData.dueDate,
           memo: inputData.memo,
           target_hours: inputData.targetHours,
+          pomodoro_break_minutes: inputData.pomodoroBreakMinutes,
+          pomodoro_break_work_minutes: inputData.pomodoroWorkMinutes,
         },
       }),
     });
@@ -57,7 +60,8 @@ export const createProject = async (inputData: Project): Promise<Project | null>
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('バリデーションエラー:', data.errors);
+      console.log("Railsから返ってきた生レスポンス:", data);
+      console.log("data.errorsの中身:", data.errors);
       alert(`作成に失敗しました:\n${data.errors.join('\n')}`);
       return null;
     }
