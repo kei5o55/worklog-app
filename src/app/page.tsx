@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { NewProjectInput } from "../components/CreateProjectModal";
 import CreateProjectModal from "../components/CreateProjectModal";
-import type { Project, Commit, WorkSession } from "../logic/types";
+import type { Project, Commit, WorkSession,ApiProjectResponse } from "../logic/types";
 import ContributionHeatmap from "../components/ContributionHeatmap";
 import CalendarBoard from "../components/CalendarBoard";
 import TotalStatsCard from "../components/TotalStatsCard";
@@ -16,6 +16,8 @@ import {
   loadSessionsIdb,
   addCommitIdb, // ← 追加
 } from "../logic/storage-idb";
+
+import { loadProjects } from "../logic/api-request";
 
 import Link from "next/link";
 
@@ -65,19 +67,10 @@ export default function ProjectsPage() {
     setHasMounted(true);
   }, []);
 
-  const loadProjects=async()=>{
-    try{
-      const response = await fetch('http://localhost:3001/api/v1/projects');
-      const data=await response.json();
-      console.log(data);
-    } catch(error){
-      console.error("エラー発生",error)
-    }
-  };
-
   const refresh = async () => {
     const [nextProjects, nextCommits, nextSessions] = await Promise.all([
       loadProjectsIdb(),
+      //loadProjects(),
       loadCommitsIdb(),
       loadSessionsIdb(),
     ]);
@@ -85,7 +78,7 @@ export default function ProjectsPage() {
     setProjects(nextProjects);
     setCommitsAll(nextCommits);
     setSessionsAll(nextSessions);
-    loadProjects();
+    //loadProjects();
   };
 
   useEffect(() => {

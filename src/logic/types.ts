@@ -31,6 +31,19 @@ export type Project = {
   completed:boolean;
 };
 
+export type ApiProjectResponse = {
+  id: string;
+  name: string;
+  due_date: string | null;
+  memo: string | null;
+  created_at: string;
+  target_hours?: number;
+  pomodoro_work_minutes?: number;
+  pomodoro_break_minutes?: number;
+  completed: boolean;
+};
+
+
 export type WorkSessionStatus = "running" | "paused";
 
 export type TimerMode = "idle" | "work" | "break";
