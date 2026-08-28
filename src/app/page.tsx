@@ -65,6 +65,16 @@ export default function ProjectsPage() {
     setHasMounted(true);
   }, []);
 
+  const loadProjects=async()=>{
+    try{
+      const response = await fetch('http://localhost:3001/api/v1/projects');
+      const data=await response.json();
+      console.log(data);
+    } catch(error){
+      console.error("エラー発生",error)
+    }
+  };
+
   const refresh = async () => {
     const [nextProjects, nextCommits, nextSessions] = await Promise.all([
       loadProjectsIdb(),
@@ -75,6 +85,7 @@ export default function ProjectsPage() {
     setProjects(nextProjects);
     setCommitsAll(nextCommits);
     setSessionsAll(nextSessions);
+    loadProjects();
   };
 
   useEffect(() => {
