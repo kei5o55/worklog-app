@@ -69,8 +69,8 @@ export default function ProjectsPage() {
 
   const refresh = async () => {
     const [nextProjects, nextCommits, nextSessions] = await Promise.all([
-      //loadProjectsIdb(),
-      loadProjects(),
+      loadProjectsIdb(),
+      //loadProjects(),
       loadCommitsIdb(),
       loadSessionsIdb(),
     ]);
@@ -78,7 +78,6 @@ export default function ProjectsPage() {
     setProjects(nextProjects);
     setCommitsAll(nextCommits);
     setSessionsAll(nextSessions);
-    //loadProjects();
   };
 
   useEffect(() => {
@@ -220,10 +219,15 @@ export default function ProjectsPage() {
   };
 
   const onCreate2 = async (input: NewProjectInput) => {
-    await createProject(input);
-    const nextProjects = await loadProjects(); // ← await を追加！
-    setProjects(nextProjects);
-    setIsCreateOpen(false);
+    try {
+      await createProject(input);
+      const nextProjects = await loadProjects();
+      setProjects(nextProjects);
+      setIsCreateOpen(false); // 成功したときだけ閉じる
+    } catch (error) {
+      console.error("プロジェクトの作成に失敗しました:", error);
+      // エラー通知などを表示する処理
+    }
   };
 
   // 完了状態の切り替え関数
@@ -524,8 +528,8 @@ export default function ProjectsPage() {
       <CreateProjectModal
         open={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
-        //onCreate={onCreate}
-        onCreate={onCreate2}　//バックエンド連携の時はこっちにスイッチ
+        onCreate={onCreate}
+        //onCreate={onCreate2}　//バックエンド連携の時はこっちにスイッチ
       />
 
       {/* ダイレクトコミットモーダル */}
