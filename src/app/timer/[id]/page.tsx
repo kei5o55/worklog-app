@@ -13,7 +13,7 @@ import {
 } from "../../../logic/storage-idb";
 import { loadProjects } from "../../../logic/api-request";
 import { useRouter } from "next/navigation";
-import type { Project, TimerMode, WorkSession } from "../../../logic/types";
+import type { Project, TimerMode, WorkSession,Commit } from "../../../logic/types";
 
 function pad2(n: number) {
   return String(n).padStart(2, "0");
@@ -47,6 +47,7 @@ export default function TimerPage({
   const [sessions, setSessions] = useState<WorkSession[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [commits,setCommits]=useState<Commit[]>([]);
   const [loadedOnce, setLoadedOnce] = useState(false);
   const [pomodoroEnabled, setPomodoroEnabled] = useState(false);
   const [phase, setPhase] = useState<TimerMode>("idle");
@@ -67,16 +68,18 @@ export default function TimerPage({
 
     async function init() {
       try {
-        const [loadedProjects, loadedSessions] = await Promise.all([
+        const [loadedProjects, loadedSessions,loadedCommits] = await Promise.all([
           loadProjectsIdb(),
           //loadProjects(),
           loadSessionsIdb(),
+          loadCommitsIdb(),
         ]);
 
         if (cancelled) return;
 
         setProjects(loadedProjects);
         setSessions(loadedSessions);
+        setCommits(loadedCommits);
         setLoadedOnce(true);
       } finally {
         if (!cancelled) setLoading(false);
@@ -94,6 +97,11 @@ export default function TimerPage({
     () => sessions.filter((s) => s.projectId === projectId),
     [sessions, projectId]
   );
+
+  const projectCommits =useMemo(
+    ()=>commits.filter((s)=>s.projectId===projectId),[commits,projectId]
+  );
+
 
   function isSameLocalDay(t1: number, t2: number) {
     const a = new Date(t1);
@@ -307,6 +315,14 @@ export default function TimerPage({
 
     startWithProject(selectedProject.id);
   };
+
+  const getProjectCommits =async()=>{ 
+    if(!selectedProject) return;
+    const allCommit=await loadCommitsIdb();
+    const projectCommits =allCommit.filter((c)=>c.projectId === selectedProject.id).sort((a,b)=>b.endedAt - a.endedAt);
+    return projectCommits;
+  }
+ 
 
   const stop = async () => {
     if (!activeSession || !selectedProject) return;
@@ -616,50 +632,30 @@ export default function TimerPage({
 
       {/* Sessions一覧 */}
       <section>
-        <h2 className="text-base font-bold text-zinc-900 mb-3">Sessions</h2>
+        <h2 className="text-base font-bold text-zinc-900 mb-3">ルーズリーフ</h2>
 
-        {projectSessions.length === 0 ? (
+        {projectCommits.length === 0 ? (
           <div className="p-8 text-center text-zinc-400 text-sm bg-zinc-50/50 border border-dashed border-zinc-200 rounded-2xl">
             まだセッションがありません
           </div>
         ) : (
           <ul className="space-y-3">
-            {projectSessions.map((s) => {
+            {projectCommits.map((s) => {
               const end =
-                s.endedAt ??
-                (s.status === "paused"
-                  ? (s.pausedAt ?? s.startedAt)
-                  : Date.now());
+                s.endedAt
               const ms = end - s.startedAt;
 
               const isDone = !!s.endedAt;
-              const isRunning = s.status === "running" && !isDone;
 
               return (
                 <li
                   key={s.id}
-                  className={`p-4 rounded-xl border transition-all ${
-                    isRunning
-                      ? "bg-sky-50/30 border-sky-200 shadow-sm"
-                      : "bg-white border-zinc-200 opacity-90"
-                  }`}
+                  className={`p-4 rounded-xl border transition-all  border-zinc-200`}
                 >
                   <div className="flex items-center justify-between gap-3 mb-1">
                     <strong className="text-lg font-mono font-bold text-zinc-800 tabular-nums">
                       {formatMs(ms)}
                     </strong>
-
-                    <span
-                      className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
-                        isDone
-                          ? "bg-zinc-100 text-zinc-600 border border-zinc-200"
-                          : isRunning
-                          ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                          : "bg-amber-100 text-amber-800 border border-amber-200"
-                      }`}
-                    >
-                      {isDone ? "DONE" : isRunning ? "RUNNING" : "PAUSED"}
-                    </span>
                   </div>
 
                   <div className="text-xs text-zinc-400 mb-2">
