@@ -5,6 +5,7 @@ import type { ChangeEvent } from "react";
 import type { Project, Commit, WorkSession, User } from "../../logic/types";
 import TotalStatsCard from "../../components/TotalStatsCard";
 import UserProfileModal from "../../components/UserProfileModal";
+import ArtLightbox from "../../components/ArtLightbox";
 import Link from "next/link";
 import {
   loadProjectsIdb,
@@ -388,12 +389,14 @@ export default function UserProfilePage() {
                     className="group relative bg-slate-900 rounded-xl overflow-hidden border border-slate-200 aspect-square shadow-sm flex flex-col justify-end"
                   >
                     {imageUrl && (
-                      <img
+                      /*<img
                         src={imageUrl}
                         alt={commit.note || "進捗画像"}
                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-200 opacity-90 group-hover:opacity-100"
-                      />
+                      />*/
+                      <ArtLightbox src={imageUrl} alt={commit.note||"進捗画像"}/>
                     )}
+                    
 
                     <div className="relative z-10 bg-gradient-to-t from-slate-950/90 via-slate-950/50 to-transparent p-2.5 text-white space-y-1">
                       <span className="text-[10px] text-sky-300 font-medium truncate block">

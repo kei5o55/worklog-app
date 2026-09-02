@@ -14,13 +14,8 @@ export default function ArtLightbox({ src, alt }: { src: string; alt: string }) 
           console.log("open!");
           setOpen(true);
         }}
-        style={{
-          border: "1px solid rgba(255,255,255,0.12)",
-          borderRadius: 12,
-          overflow: "hidden",
-          background: "rgba(255,255,255,0.06)",
-          cursor: "zoom-in",
-        }}
+        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-200 opacity-90 group-hover:opacity-100 cursor-zoom-in"
+
       >
         <img src={src} alt={alt} style={{ width: "100%", height: "auto", display: "block" }} />
       </div>
