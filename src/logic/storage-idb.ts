@@ -1,8 +1,9 @@
 import { openDB, type DBSchema } from "idb";
-import type { Project, WorkSession, Commit, CalendarMemo, DaySchedule } from "./types";
+import type { Project, WorkSession, Commit, CalendarMemo, DaySchedule, User} from "./types";
+import {initialuUser} from "./types";
 
 export const IDB_NAME = "worklog-db";
-export const IDB_VERSION = 2; // DayScheduleストア追加のためバージョンアップ
+export const IDB_VERSION = 3; // userProfileストア追加のためバージョンアップ (2 -> 3)
 
 export const STORE_NAMES = {
   projects: "projects",
@@ -10,7 +11,11 @@ export const STORE_NAMES = {
   commits: "commits",
   calendarMemos: "calendarMemos",
   daySchedules: "daySchedules",
+  userProfile: "userProfile", // 追加
 } as const;
+
+// ユーザープロフィールの固定キー
+export const CURRENT_USER_KEY = "current_user";
 
 interface WorklogDB extends DBSchema {
   projects: {
@@ -32,6 +37,10 @@ interface WorklogDB extends DBSchema {
   daySchedules: {
     key: string;
     value: DaySchedule;
+  };
+  userProfile: { // 追加
+    key: string;
+    value: User;
   };
 }
 
@@ -70,9 +79,6 @@ export function normalizeProject(p: Project): Project {
     targetHours: th,
     pomodoroWorkMinutes: pwm,
     pomodoroBreakMinutes: pbm,
-    startDate: normalizeString((p as any).startDate),
-    endDate: normalizeString((p as any).endDate),
-    color: normalizeString((p as any).color),
   };
 }
 
@@ -99,6 +105,17 @@ function normalizeDaySchedule(s: DaySchedule): DaySchedule {
   };
 }
 
+// ユーザープロフィールの正規化ヘルパー
+function normalizeUserProfile(user: User): User {
+  return {
+    ...user,
+    id: user.id || CURRENT_USER_KEY,
+    name: normalizeString(user.name) ?? "No Name",
+    bio: normalizeString(user.bio),
+    bgmUrl: normalizeString(user.bgmUrl),
+  };
+}
+
 export const dbPromise =
   typeof window !== "undefined"
     ? openDB<WorklogDB>(IDB_NAME, IDB_VERSION, {
@@ -117,6 +134,10 @@ export const dbPromise =
           }
           if (!db.objectStoreNames.contains(STORE_NAMES.daySchedules)) {
             db.createObjectStore(STORE_NAMES.daySchedules, { keyPath: "id" });
+          }
+          // 追加: userProfileストアの作成
+          if (!db.objectStoreNames.contains(STORE_NAMES.userProfile)) {
+            db.createObjectStore(STORE_NAMES.userProfile, { keyPath: "id" });
           }
         },
       })
@@ -318,6 +339,30 @@ export async function clearDaySchedulesIdb(): Promise<void> {
   await db.clear(STORE_NAMES.daySchedules);
 }
 
+// ===== User Profile (追加) =====
+export async function loadUserProfileIdb(): Promise<User> {
+  const db = await dbPromise;
+  if (!db) return initialuUser;
+  const user = await db.get(STORE_NAMES.userProfile, CURRENT_USER_KEY);
+  return user ? normalizeUserProfile(user) : initialuUser;
+}
+
+export async function saveUserProfileIdb(user: User): Promise<void> {
+  const db = await dbPromise;
+  if (!db) return;
+  const normalized = normalizeUserProfile({
+    ...user,
+    id: CURRENT_USER_KEY, // キーを固定して保存
+  });
+  await db.put(STORE_NAMES.userProfile, normalized);
+}
+
+export async function clearUserProfileIdb(): Promise<void> {
+  const db = await dbPromise;
+  if (!db) return;
+  await db.clear(STORE_NAMES.userProfile);
+}
+
 // ===== Global Reset =====
 export async function clearAllStorageIdb(): Promise<void> {
   const db = await dbPromise;
@@ -329,6 +374,7 @@ export async function clearAllStorageIdb(): Promise<void> {
       STORE_NAMES.commits,
       STORE_NAMES.calendarMemos,
       STORE_NAMES.daySchedules,
+      STORE_NAMES.userProfile, // 追加
     ],
     "readwrite",
   );
@@ -338,6 +384,7 @@ export async function clearAllStorageIdb(): Promise<void> {
   await tx.objectStore(STORE_NAMES.commits).clear();
   await tx.objectStore(STORE_NAMES.calendarMemos).clear();
   await tx.objectStore(STORE_NAMES.daySchedules).clear();
+  await tx.objectStore(STORE_NAMES.userProfile).clear(); // 追加
 
   await tx.done;
 }

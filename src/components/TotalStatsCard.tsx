@@ -105,10 +105,10 @@ export default function TotalStatsCard({
 
         {/* 総コミット数 */}
         <div className="bg-slate-800/60 border border-slate-700/50 p-3.5 rounded-xl space-y-1">
-          <span className="text-xs font-medium text-slate-400 block">総コミット数</span>
+          <span className="text-xs font-medium text-slate-400 block">総ルーズリーフ数</span>
           <span className="text-xl sm:text-2xl font-extrabold text-slate-100 tracking-tight">
             {stats.totalCommits}{" "}
-            <span className="text-xs font-normal text-slate-400">回</span>
+            <span className="text-xs font-normal text-slate-400">枚</span>
           </span>
         </div>
 

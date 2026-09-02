@@ -6,8 +6,8 @@ export type NewProjectInput = {
   name: string;
   dueDate: string;
   memo: string;
-  targetHours: string; // "" or "10" みたいな文字列で受ける
-  pomodoroWorkMinutes?: string; // "" or "25" みたいな文字列で受ける(ないときはポモドーロオフとか)
+  targetHours: string; // "" or "10" などの文字列
+  pomodoroWorkMinutes?: string; // "" or "25" などの文字列
   pomodoroBreakMinutes?: string;
 };
 
@@ -21,17 +21,19 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
   const [name, setName] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [memo, setMemo] = useState("");
-  const [targetHours, setTargetHours] = useState<string | number>("");
-  const [pomodoroWorkMinutes, setPomodoroWorkMinutes] = useState<
-    string | number
-  >("");
-  const [pomodoroBreakMinutes, setPomodoroBreakMinutes] = useState<
-    string | number
-  >("");
-  function toHalfWidth(str: string) {
-    return str.replace(/[０-９]/g, (s) =>
+
+  // ⭕️ すべて string で管理（初期値は空文字 ""）
+  const [targetHours, setTargetHours] = useState("");
+  const [pomodoroWorkMinutes, setPomodoroWorkMinutes] = useState("");
+  const [pomodoroBreakMinutes, setPomodoroBreakMinutes] = useState("");
+
+  // 全角数字を半角数字に変換し、数字以外を除去するヘルパー関数
+  function formatNumberInput(str: string) {
+    const halfWidth = str.replace(/[０-９]/g, (s) =>
       String.fromCharCode(s.charCodeAt(0) - 0xfee0),
     );
+    // 数字以外の文字を除去
+    return halfWidth.replace(/[^0-9]/g, "");
   }
 
   const canCreate = useMemo(() => name.trim().length > 0, [name]);
@@ -51,14 +53,17 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
 
   const submit = () => {
     if (!canCreate) return;
-    onCreate({
+    
+    // 型変換なくそのままオブジェクトに渡せる
+    const input: NewProjectInput = {
       name,
       dueDate,
       memo,
-      targetHours: String(targetHours),
-      pomodoroWorkMinutes: String(pomodoroWorkMinutes),
-      pomodoroBreakMinutes: String(pomodoroBreakMinutes),
-    });
+      targetHours,
+      pomodoroWorkMinutes,
+      pomodoroBreakMinutes,
+    };
+    onCreate(input);
   };
 
   return (
@@ -122,19 +127,7 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
                 min={1}
                 step={1}
                 value={targetHours}
-                onChange={(e) => {
-                  const raw = toHalfWidth(e.target.value);
-
-                  if (raw === "") {
-                    setTargetHours("");
-                    return;
-                  }
-
-                  const n = Number(raw);
-                  if (Number.isFinite(n) && n > 0) {
-                    setTargetHours(n);
-                  }
-                }}
+                onChange={(e) => setTargetHours(formatNumberInput(e.target.value))}
                 placeholder="例: 10"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
               />
@@ -151,17 +144,7 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
                 min={1}
                 step={1}
                 value={pomodoroWorkMinutes}
-                onChange={(e) => {
-                  const raw = toHalfWidth(e.target.value);
-                  if (raw === "") {
-                    setPomodoroWorkMinutes("");
-                    return;
-                  }
-                  const n = Number(raw);
-                  if (Number.isFinite(n) && n > 0) {
-                    setPomodoroWorkMinutes(n);
-                  }
-                }}
+                onChange={(e) => setPomodoroWorkMinutes(formatNumberInput(e.target.value))}
                 placeholder="例: 25"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
               />
@@ -176,17 +159,7 @@ export default function CreateProjectModal({ open, onClose, onCreate }: Props) {
                 min={1}
                 step={1}
                 value={pomodoroBreakMinutes}
-                onChange={(e) => {
-                  const raw = toHalfWidth(e.target.value);
-                  if (raw === "") {
-                    setPomodoroBreakMinutes("");
-                    return;
-                  }
-                  const n = Number(raw);
-                  if (Number.isFinite(n) && n > 0) {
-                    setPomodoroBreakMinutes(n);
-                  }
-                }}
+                onChange={(e) => setPomodoroBreakMinutes(formatNumberInput(e.target.value))}
                 placeholder="例: 5"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
               />

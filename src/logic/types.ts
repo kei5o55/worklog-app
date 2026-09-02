@@ -1,9 +1,26 @@
 // src/logic/types.ts
 
-export type ProjectId = string;
+
+
+export type IconImage = {//railsのアクティブストレージでurlを受け取ってアイコンにしたい
+  width: number;
+  height: number;
+  url: string;
+};
+
+export type User = {
+  id: string;
+  name: string;
+  icon?: string;
+  iconBlob?: Blob | File;
+  bio?: string;
+  bgmUrl?: string; // 作業BGMリンク用
+  createdAt?: number;
+  updatedAt?: number;
+};
 
 export type Project = {
-  id: ProjectId;
+  id: string;
   name: string;
   dueDate?: string; // "YYYY-MM-DD"
   memo?: string;
@@ -12,12 +29,20 @@ export type Project = {
   pomodoroWorkMinutes?: number;
   pomodoroBreakMinutes?: number;
   completed:boolean;
-
-  // カレンダー表示用
-  startDate?: string; // "YYYY-MM-DD"
-  endDate?: string; // "YYYY-MM-DD"
-  color?: string; // 例: "#4f8cff"
 };
+
+export type ApiProjectResponse = {
+  id: string;
+  name: string;
+  due_date: string | null;
+  memo: string | null;
+  created_at: string;
+  target_hours?: number;
+  pomodoro_work_minutes?: number;
+  pomodoro_break_minutes?: number;
+  completed: boolean;
+};
+
 
 export type WorkSessionStatus = "running" | "paused";
 
@@ -25,7 +50,7 @@ export type TimerMode = "idle" | "work" | "break";
 
 export type WorkSession = {
   id: string;
-  projectId: ProjectId;
+  projectId: string;
   startedAt: number;
   endedAt?: number;
   note: string;
@@ -89,3 +114,33 @@ export type CalendarCell = {
   commits: Commit[];
   schedules?: DaySchedule[];
 };
+
+export const localUser: User[] = [
+  {
+    id: "1",
+    name: "dbに接続できないよぅ",
+    icon:"https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+    bio: "なんふぇ？",
+    bgmUrl: "test",
+    createdAt: 1704067200000, // 2024-01-01T00:00:00.000Z
+    updatedAt: 1709251200000, // 2024-03-01T00:00:00.000Z
+  },{
+    id: "2",
+    name: "テストユーザ２",
+    icon:"https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+    bio: "なんふぇ？",
+    bgmUrl: "test",
+    createdAt: 1704067200000, // 2024-01-01T00:00:00.000Z
+    updatedAt: 1709251200000, // 2024-03-01T00:00:00.000Z
+  }
+];
+
+export const initialuUser:User={
+    id: "1",
+    name: "dbに接続できないよぅ",
+    icon:"https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+    bio: "なんふぇ？",
+    bgmUrl: "test",
+    createdAt: 1704067200000, // 2024-01-01T00:00:00.000Z
+    updatedAt: 1709251200000, // 2024-03-01T00:00:00.000Z
+}

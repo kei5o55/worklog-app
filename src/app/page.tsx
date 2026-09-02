@@ -3,10 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import type { NewProjectInput } from "../components/CreateProjectModal";
 import CreateProjectModal from "../components/CreateProjectModal";
-import type { Project, Commit, WorkSession } from "../logic/types";
+import type { Project, Commit, WorkSession,ApiProjectResponse } from "../logic/types";
 import ContributionHeatmap from "../components/ContributionHeatmap";
 import CalendarBoard from "../components/CalendarBoard";
-import TotalStatsCard from "../components/TotalStatsCard";
 import HealthCheckButton from "../components/HealthCheckButton";
 import CommitModal, { type DraftCommit } from "../components/CommitModal"; // ← 追加
 import {
@@ -17,7 +16,10 @@ import {
   addCommitIdb, // ← 追加
 } from "../logic/storage-idb";
 
+import { loadProjects,createProject} from "../logic/api-request";
+
 import Link from "next/link";
+import next from "next";
 
 function uid() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -68,6 +70,7 @@ export default function ProjectsPage() {
   const refresh = async () => {
     const [nextProjects, nextCommits, nextSessions] = await Promise.all([
       loadProjectsIdb(),
+      //loadProjects(),
       loadCommitsIdb(),
       loadSessionsIdb(),
     ]);
@@ -215,6 +218,18 @@ export default function ProjectsPage() {
     setIsCreateOpen(false);
   };
 
+  const onCreate2 = async (input: NewProjectInput) => {
+    try {
+      await createProject(input);
+      const nextProjects = await loadProjects();
+      setProjects(nextProjects);
+      setIsCreateOpen(false); // 成功したときだけ閉じる
+    } catch (error) {
+      console.error("プロジェクトの作成に失敗しました:", error);
+      // エラー通知などを表示する処理
+    }
+  };
+
   // 完了状態の切り替え関数
   const onToggleComplete = async (project: Project) => {
     const nextStatus = !project.completed;
@@ -252,7 +267,7 @@ export default function ProjectsPage() {
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
-            Worklog
+            Binder
           </h1>
           <p className="text-xs text-slate-500 mt-1">
             データはブラウザ（IndexedDB）に安全に保存されます
@@ -274,12 +289,6 @@ export default function ProjectsPage() {
           </button>
         </div>
       </header>
-
-      <TotalStatsCard
-        commits={commitsAll}
-        projects={projects}
-        loading={loading}
-      />
 
       {/* Projects List Header & Tabs */}
       <section className="space-y-4">
@@ -520,6 +529,7 @@ export default function ProjectsPage() {
         open={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         onCreate={onCreate}
+        //onCreate={onCreate2}　//バックエンド連携の時はこっちにスイッチ
       />
 
       {/* ダイレクトコミットモーダル */}
