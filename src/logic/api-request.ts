@@ -1,7 +1,37 @@
 import type { NewProjectInput } from "../components/CreateProjectModal";
-import type { Project ,ApiProjectResponse, } from "./types";
+import type { Project ,ApiProjectResponse, Commit, } from "./types";
 
 const BASE_URL = 'http://localhost:3001/api/v1/projects';
+
+//コミットを取得する API
+export const loadCommits = async (): Promise<Commit[]> => {
+  try {
+    const response = await fetch(BASE_URL);
+    
+    if (!response.ok) {
+      throw new Error(`HTTPエラー! status: ${response.status}`);
+    }
+
+    // APIから返ってきた生のJSON配列
+    const rawData: Commit[] = await response.json();
+
+    // TypeScriptの Project 型に変換（マッピング）
+    const commits: Commit[] = rawData.map((item) => ({
+      id:"test",
+      projectId:"test",
+      startedAt:item.startedAt,
+      endedAt:1,
+      durationMs:1,
+    }));
+
+    console.log("型変換後のデータ:", commits);
+    return commits;
+
+  } catch (error) {
+    console.error("エラー発生:", error);
+    return [];
+  }
+};
 
 //プロジェクトを取得する API
 export const loadProjects = async (): Promise<Project[]> => {

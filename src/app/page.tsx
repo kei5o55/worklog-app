@@ -61,7 +61,7 @@ export default function ProjectsPage() {
   const [hasMounted, setHasMounted] = useState(false);
 
   // 表示するタブ（active: 進行中, completed: 完了済み）
-  const [activeTab, setActiveTab] = useState<"active" | "completed">("active");
+  const [activeTab, setActiveTab] = useState<"calender"|"active" | "completed">("active");
 
   useEffect(() => {
     setHasMounted(true);
@@ -333,6 +333,17 @@ export default function ProjectsPage() {
                 {counts.completed}
               </span>
             </button>
+
+            <button
+              onClick={() => setActiveTab("calender")} 
+              className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-2 ${
+                activeTab === "calender"
+                  ? "bg-emerald-700 text-white shadow-sm"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              カレンダー
+            </button>
           </div>
         </div>
 
@@ -340,6 +351,8 @@ export default function ProjectsPage() {
           <div className="flex items-center justify-center p-12 rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 text-slate-400 font-medium text-sm">
             データを読み込み中...
           </div>
+        ) : activeTab === "calender" ? (
+            <CalendarBoard></CalendarBoard>
         ) : filteredProjects.length === 0 ? (
           <div className="text-center py-12 px-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50/50">
             <p className="text-slate-500 font-medium">
@@ -520,6 +533,7 @@ export default function ProjectsPage() {
                   </div>
                 </article>
               );
+              
             })}
           </div>
         )}
@@ -574,13 +588,9 @@ export default function ProjectsPage() {
 
       {/* Calendar & Heatmap */}
       <div className="space-y-6 pt-4 border-t border-slate-200">
-        <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-          <CalendarBoard projectsFromParent={projects} />
-        </section>
-
-        <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        {/*<section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
           <ContributionHeatmap commits={commitsAll} title="All Activity" />
-        </section>
+        </section>*/}
         <HealthCheckButton></HealthCheckButton>
       </div>
     </main>

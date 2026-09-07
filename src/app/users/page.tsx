@@ -6,6 +6,7 @@ import type { Project, Commit, WorkSession, User } from "../../logic/types";
 import TotalStatsCard from "../../components/TotalStatsCard";
 import UserProfileModal from "../../components/UserProfileModal";
 import ArtLightbox from "../../components/ArtLightbox";
+import ContributionHeatmap from "../../components/ContributionHeatmap";
 import Link from "next/link";
 import {
   loadProjectsIdb,
@@ -421,6 +422,8 @@ export default function UserProfilePage() {
           }}
         />
       </div>
+      <ContributionHeatmap commits={commitsAll} title="All Activity"></ContributionHeatmap>
     </div>
+    
   );
 }

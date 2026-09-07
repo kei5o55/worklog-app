@@ -1,2 +1,19 @@
 /* src/app/globals.css */
 @import "tailwindcss";
+
+@keyframes intense-blink {
+  0%, 100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 15px #ff0055) drop-shadow(0 0 30px #ff0055);
+    color: #ffffff;
+  }
+  50% {
+    opacity: 0;
+    filter: drop-shadow(0 0 0px transparent);
+    color: #00ffff;
+  }
+}
+
+.animate-eye-destroyer {
+  animation: intense-blink 0.08s infinite alternate ease-in-out;
+}
