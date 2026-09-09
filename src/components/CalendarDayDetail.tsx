@@ -2,7 +2,7 @@ import type { CalendarCell, Project, Commit, DaySchedule } from "../logic/types"
 import DayScheduleTimeline from "./DayScheduleTimeline";
 import CreateScheduleModal from "./CreateScheduleModal";
 import { useState, useEffect } from "react";
-import { loadDaySchedulesIdb, addDayScheduleIdb } from "../logic/storage-idb";
+import { loadDaySchedulesIdb, addDayScheduleIdb, deleteDayScheduleIdb } from "../logic/storage-idb";
 
 type Props = {
   cell: CalendarCell | null;
@@ -95,6 +95,11 @@ export default function CalendarDayDetail({
       console.error("Failed to add schedule to IndexedDB:", error);
     }
   };
+  
+  const handleDeleteSchedule = async (id:string)=>{
+    await deleteDayScheduleIdb(id);
+    setSchedules((prev) => prev.filter((s) => s.id != id));
+  }
 
   if (!cell) {
     return (
@@ -257,6 +262,7 @@ export default function CalendarDayDetail({
           schedules={daySchedules}
           commits={cell.commits}
           projects={projects}
+          onDeleteSchedule={handleDeleteSchedule}
         />
       </div>
 

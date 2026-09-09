@@ -86,20 +86,16 @@ export type CalendarMemo = {
   text: string;
   createdAt: number;
 };
+
 export type DaySchedule = {
   id: string;
   date: string; // YYYY-MM-DD
-
   title: string;
-
   startHour: number; // 0~23
   startMinute: number;
-
   endHour: number;
   endMinute: number;
-
   color?: string;
-
   projectId?: string;
 };
 

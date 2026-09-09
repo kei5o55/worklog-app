@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import type { Commit, Project, DaySchedule } from "../logic/types";
+import { addDayScheduleIdb, deleteDayScheduleIdb } from "../logic/storage-idb";
 
 type Props = {
   schedules: DaySchedule[];
   commits: Commit[];
   projects: Project[];
+  onDeleteSchedule: (id: string) => void;
 };
 
 type HourlySlot = {
@@ -30,11 +32,14 @@ export default function DayScheduleTimeline({
   schedules,
   commits,
   projects,
+  onDeleteSchedule
 }: Props) {
   const [selectedSlot, setSelectedSlot] = useState<HourlySlot | null>(null);
 
   // 0時〜23時の24スロットを生成
   const hours = Array.from({ length: 24 }, (_, i) => i);
+
+  
 
   const slots: HourlySlot[] = hours.map((hour) => {
     // その時間の予定（startHour 〜 endHour の間に含まれるか）
@@ -56,6 +61,19 @@ export default function DayScheduleTimeline({
       commits: slotCommits,
     };
   });
+
+  const handleDeleteDaySchedule = async (id: string) => {
+    // 親の削除関数を実行
+    onDeleteSchedule?.(id);
+
+    // モーダル側も同期
+    if (selectedSlot) {
+      setSelectedSlot({
+        ...selectedSlot,
+        schedules: selectedSlot.schedules.filter((s) => s.id !== id),
+      });
+    }
+  };
 
   return (
     <div className="flex flex-col rounded-xl border border-gray-100 bg-gray-50/30 p-4">
@@ -155,10 +173,30 @@ export default function DayScheduleTimeline({
                 ) : (
                   <div className="space-y-1.5">
                     {selectedSlot.schedules.map((s) => (
-                      <div key={s.id} className="rounded-lg border border-indigo-100 bg-indigo-50/50 p-2.5 text-xs">
-                        <div className="font-bold text-indigo-950">{s.title}</div>
-                        <div className="text-indigo-600/80 text-[11px] mt-0.5">
-                          {formatTime(s.startHour, s.startMinute)} 〜 {formatTime(s.endHour, s.endMinute)}
+                      <div key={s.id} className="group relative rounded-lg border border-indigo-100 bg-indigo-50/50 p-2.5 text-xs">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="font-bold text-indigo-950">{s.title}</div>
+                            <div className="text-indigo-600/80 text-[11px] mt-0.5">
+                              {formatTime(s.startHour, s.startMinute)} 〜 {formatTime(s.endHour, s.endMinute)}
+                            </div>
+                          </div>
+
+                          {/* 削除ボタン */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteDaySchedule(s.id)
+                            }}
+                            className="text-gray-400 hover:text-red-600 hover:bg-red-50 p-1 rounded transition-colors"
+                            title="予定を削除"
+                          >
+                            {/* Lucide や Heroicons 等のゴミ箱アイコン、または SVG */}
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
                         </div>
                       </div>
                     ))}
