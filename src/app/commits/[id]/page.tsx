@@ -45,10 +45,10 @@ export default function CommitDetailPage({
   const refreshData = async () => {
     try {
       const [nextCommits, nextProjects] = await Promise.all([
-        //loadCommitsIdb(),
-        loadCommits(),
-        //loadProjectsIdb(),
-        loadProjects(),
+        loadCommitsIdb(),
+        //loadCommits(),
+        loadProjectsIdb(),
+        //loadProjects(),
       ]);
       setCommits(nextCommits);
       setProjects(nextProjects);
@@ -108,7 +108,7 @@ export default function CommitDetailPage({
       return () => {
         URL.revokeObjectURL(url);
       };
-    } else {
+    } else{
       setImageUrl(null);
     }
   }, [commit]);

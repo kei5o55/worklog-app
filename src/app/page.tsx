@@ -68,10 +68,10 @@ export default function ProjectsPage() {
 
   const refresh = async () => {
     const [nextProjects, nextCommits, nextSessions] = await Promise.all([
-      //loadProjectsIdb(),
-      loadProjects(),
-      //loadCommitsIdb(),
-      loadCommits(),
+      loadProjectsIdb(),
+      //loadProjects(),
+      loadCommitsIdb(),
+      //loadCommits(),
       loadSessionsIdb(),
     ]);
 
