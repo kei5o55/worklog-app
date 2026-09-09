@@ -9,6 +9,7 @@ import {
   loadProjectsIdb,
   saveCommitsIdb,
 } from "../../../logic/storage-idb";
+import {loadCommits,loadProjects} from "../../../logic/api-request"
 import type { Commit, Project } from "../../../logic/types";
 
 function pad2(n: number) {
@@ -44,8 +45,10 @@ export default function CommitDetailPage({
   const refreshData = async () => {
     try {
       const [nextCommits, nextProjects] = await Promise.all([
-        loadCommitsIdb(),
-        loadProjectsIdb(),
+        //loadCommitsIdb(),
+        loadCommits(),
+        //loadProjectsIdb(),
+        loadProjects(),
       ]);
       setCommits(nextCommits);
       setProjects(nextProjects);

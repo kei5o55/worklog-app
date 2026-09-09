@@ -7,6 +7,7 @@ import {
   loadCommitsIdb,
   saveProjectsIdb,
 } from "../../../logic/storage-idb";
+import { loadCommits,loadProjects } from "../../../logic/api-request";
 import type { Project, Commit } from "../../../logic/types";
 import Link from "next/link";
 import { use } from "react";
@@ -44,8 +45,10 @@ export default function ProjectDetailPage({
 
   const refresh = async () => {
     const [nextProjects, nextCommits] = await Promise.all([
-      loadProjectsIdb(),
-      loadCommitsIdb(),
+      //loadProjectsIdb(),
+      //loadCommitsIdb(),
+      loadProjects(),
+      loadCommits(),
     ]);
 
     setProjects(nextProjects);

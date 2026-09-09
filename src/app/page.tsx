@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { NewProjectInput } from "../components/CreateProjectModal";
+import type { NewProjectInput } from "../logic/api-types";
 import CreateProjectModal from "../components/CreateProjectModal";
 import type { Project, Commit, WorkSession,ApiProjectResponse } from "../logic/types";
-import ContributionHeatmap from "../components/ContributionHeatmap";
 import CalendarBoard from "../components/CalendarBoard";
 import HealthCheckButton from "../components/HealthCheckButton";
 import CommitModal, { type DraftCommit } from "../components/CommitModal"; // ← 追加
@@ -16,7 +15,7 @@ import {
   addCommitIdb, // ← 追加
 } from "../logic/storage-idb";
 
-import { loadProjects,createProject} from "../logic/api-request";
+import { loadProjects,createProject,loadCommits,createCommit} from "../logic/api-request";
 
 import Link from "next/link";
 import next from "next";
@@ -69,9 +68,10 @@ export default function ProjectsPage() {
 
   const refresh = async () => {
     const [nextProjects, nextCommits, nextSessions] = await Promise.all([
-      loadProjectsIdb(),
-      //loadProjects(),
-      loadCommitsIdb(),
+      //loadProjectsIdb(),
+      loadProjects(),
+      //loadCommitsIdb(),
+      loadCommits(),
       loadSessionsIdb(),
     ]);
 

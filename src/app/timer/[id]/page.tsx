@@ -11,7 +11,7 @@ import {
   addCommitIdb,
   clearSessionsIdb,
 } from "../../../logic/storage-idb";
-import { loadProjects } from "../../../logic/api-request";
+import { loadProjects,loadCommits } from "../../../logic/api-request";
 import { useRouter } from "next/navigation";
 import type { Project, TimerMode, WorkSession,Commit } from "../../../logic/types";
 
@@ -69,10 +69,11 @@ export default function TimerPage({
     async function init() {
       try {
         const [loadedProjects, loadedSessions,loadedCommits] = await Promise.all([
-          loadProjectsIdb(),
-          //loadProjects(),
+          //loadProjectsIdb(),
+          loadProjects(),
           loadSessionsIdb(),
-          loadCommitsIdb(),
+          //loadCommitsIdb(),
+          loadCommits(),
         ]);
 
         if (cancelled) return;
