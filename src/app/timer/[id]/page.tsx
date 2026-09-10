@@ -69,8 +69,8 @@ export default function TimerPage({
     async function init() {
       try {
         const [loadedProjects, loadedSessions,loadedCommits] = await Promise.all([
-          //loadProjectsIdb(),
-          loadProjects(),
+          loadProjectsIdb(),
+          //loadProjects(),
           loadSessionsIdb(),
           //loadCommitsIdb(),
           loadCommits(),

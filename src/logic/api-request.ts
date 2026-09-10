@@ -1,4 +1,5 @@
-import type { NewCommitInput,NewProjectInput } from "./api-types";
+import { ReactServerDOMWebpackStatic } from "next/dist/server/route-modules/app-page/vendored/rsc/entrypoints";
+import type { NewCommitInput,NewDayScheduleInput,NewProjectInput,NewCalendarMemoInput } from "./api-types";
 import type { Project ,ApiProjectResponse, Commit,DaySchedule, CalendarMemo } from "./types";
 
 const BASE_URL = 'http://localhost:3001/api/v1';
@@ -168,10 +169,17 @@ export const loadDaySchedules = async (): Promise<DaySchedule[]> =>{
       throw new Error(`httpエラー status: ${response.status}`);
     }
 
-    const rawData: apiDayScheduleResponse[] = await response.json();
+    const rawData: DaySchedule[] = await response.json();
 
     const daySchedules: DaySchedule[]= rawData.map((item) => ({
-
+      id: item.id,
+      date: item.date,
+      title: item.title,
+      startHour: item.startHour,
+      startMinute: item.startMinute,
+      endHour: item.endHour,
+      endMinute: item.endMinute,
+      projectId: item.projectId,//projectに紐づける奴、なくていいかも。（実装しないかも
     }));
 
     return daySchedules;
@@ -181,18 +189,46 @@ export const loadDaySchedules = async (): Promise<DaySchedule[]> =>{
   }
 };
 
-export const createDaySchedules = async (inputData: NewDaySchedule): Promise<DaySchedule | null> =>{
+export const createDaySchedules = async (inputData: NewDayScheduleInput): Promise<DaySchedule | null> =>{
   try{
     const response = await fetch(`"${BASE_URL}`,)
-  }catch(error){
 
+    return null;
+  }catch(error){
+    return null;
   }
 };
 
 export const loadCalendarMemos = async (): Promise<CalendarMemo[]> =>{
+  try{
+    const response = await fetch(`${BASE_URL}/Calendar_memos`);
+    
+    if(!response.ok){
+      throw new Error(`エラーだろ普通に : status: ${response.status}`);
+    }
 
+    const rawData: CalendarMemo[] = await response.json();
+
+    const calendarMemos: CalendarMemo[]= rawData.map((item) => ({
+      id: item.id,
+      date: item.date,
+      text: item.text,
+      createdAt: item.createdAt
+    }))
+
+    return calendarMemos;
+  }catch(error){
+    console.log("errorだよ: ",error);
+    return [];
+  }
 };
 
 export const createCalendarMemo = async (inputData:NewCalendarMemoInput): Promise<CalendarMemo | null> => {
+  try{
+    
+    return null;
+  }catch(error){
 
+    return null;
+  }
 };
