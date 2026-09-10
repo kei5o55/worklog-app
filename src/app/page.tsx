@@ -284,10 +284,10 @@ export default function ProjectsPage() {
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
-            Binder
+            memomy
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            データはブラウザ（IndexedDB）に安全に保存されます
+            データはブラウザ（IndexedDB）にに保存されます
           </p>
         </div>
 
@@ -577,24 +577,55 @@ export default function ProjectsPage() {
         onSave={async () => {
           if (!draftCommit || !targetProjectId) return;
 
-          await addCommitIdb({
-            id: uid(),
-            projectId: targetProjectId,
-            startedAt: draftCommit.startedAt,
-            endedAt: draftCommit.endedAt,
-            durationMs: draftCommit.endedAt - draftCommit.startedAt,
-            note: draftCommit.note,
-            image: draftCommit.image
-              ? {
-                  name: draftCommit.image.name,
-                  type: draftCommit.image.type,
-                  size: draftCommit.image.size,
-                  blob: draftCommit.image.file,
-                }
-              : null,
-          });
+          const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
 
-          // クリーンアップとデータ再取得
+          if (isApiMode) {
+            // 【API モード】Rails API へ FormData 送信
+            try {
+              const created = await createCommit({
+                projectId: targetProjectId,
+                startedAt: draftCommit.startedAt,
+                endedAt: draftCommit.endedAt,
+                note: draftCommit.note,
+                image: draftCommit.image
+                  ? {
+                      name: draftCommit.image.name,
+                      type: draftCommit.image.type,
+                      size: draftCommit.image.size,
+                      blob: draftCommit.image.file,
+                    }
+                  : undefined,
+              });
+
+              if (!created) {
+                // API保存が失敗（バリデーションエラー等）した場合はモーダルを閉じずに中断
+                return;
+              }
+            } catch (error) {
+              console.error("コミットの作成に失敗しました:", error);
+              return;
+            }
+          } else {
+            // 【ローカル/オフライン モード】IndexedDB へ保存
+            await addCommitIdb({
+              id: uid(),
+              projectId: targetProjectId,
+              startedAt: draftCommit.startedAt,
+              endedAt: draftCommit.endedAt,
+              durationMs: draftCommit.endedAt - draftCommit.startedAt,
+              note: draftCommit.note,
+              image: draftCommit.image
+                ? {
+                    name: draftCommit.image.name,
+                    type: draftCommit.image.type,
+                    size: draftCommit.image.size,
+                    blob: draftCommit.image.file,
+                  }
+                : null,
+            });
+          }
+
+          // クリーンアップとデータ再取得（共通処理）
           setIsModalOpen(false);
           setDraftCommit(null);
           setTargetProjectId(null);
