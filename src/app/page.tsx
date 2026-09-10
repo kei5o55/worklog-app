@@ -6,7 +6,7 @@ import CreateProjectModal from "../components/CreateProjectModal";
 import type { Project, Commit, WorkSession,ApiProjectResponse } from "../logic/types";
 import CalendarBoard from "../components/CalendarBoard";
 import HealthCheckButton from "../components/HealthCheckButton";
-import CommitModal, { type DraftCommit } from "../components/CommitModal"; // ← 追加
+import CommitModal, { type DraftCommit } from "../components/CommitModal"; 
 import {
   loadProjectsIdb,
   saveProjectsIdb,
