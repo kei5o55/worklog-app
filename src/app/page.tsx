@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { NewProjectInput } from "../logic/api-types";
 import CreateProjectModal from "../components/CreateProjectModal";
-import type { Project, Commit, WorkSession,ApiProjectResponse } from "../logic/types";
+import type { Project, Commit, WorkSession } from "../logic/types";
 import CalendarBoard from "../components/CalendarBoard";
 import HealthCheckButton from "../components/HealthCheckButton";
 import CommitModal, { type DraftCommit } from "../components/CommitModal"; 
@@ -18,7 +18,6 @@ import {
 import { loadProjects,createProject,loadCommits,createCommit} from "../logic/api-request";
 
 import Link from "next/link";
-import next from "next";
 
 function uid() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
