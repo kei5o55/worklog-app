@@ -36,8 +36,12 @@ export const createCommit = async (inputData: NewCommitInput): Promise<Commit | 
     const formData = new FormData();
 
     formData.append('commit[project_id]', inputData.projectId);
-    formData.append('commit[started_at]', inputData.startedAt.toString());
-    formData.append('commit[ended_at]', inputData.endedAt.toString());
+    // ⭕️ 数値(ミリ秒)を ISO 8601 文字列 ("2026-09-09T10:00:00.000Z") に変換
+    const startedAtIso = new Date(inputData.startedAt).toISOString();
+    const endedAtIso = new Date(inputData.endedAt).toISOString();
+
+    formData.append('commit[started_at]', startedAtIso);
+    formData.append('commit[ended_at]', endedAtIso);
 
     if (inputData.note) {
       formData.append('commit[note]', inputData.note);
@@ -45,6 +49,11 @@ export const createCommit = async (inputData: NewCommitInput): Promise<Commit | 
 
     if (inputData.image?.blob) {
       formData.append('commit[image]', inputData.image.blob, inputData.image.name);
+    }
+
+    console.log("送信する FormData の中身:");
+    for (const [key, value] of formData.entries()) {
+      console.log(`${key}:`, value);
     }
 
     // ⭕️ URL スラッシュを追加 (/projects/:id/commits)

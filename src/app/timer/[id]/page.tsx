@@ -14,6 +14,7 @@ import {
 import { loadProjects,loadCommits,createCommit,} from "../../../logic/api-request";
 import { useRouter } from "next/navigation";
 import type { Project, TimerMode, WorkSession,Commit } from "../../../logic/types";
+import type { NewCommitInput } from "../../../logic/api-types";
 
 function pad2(n: number) {
   return String(n).padStart(2, "0");
@@ -382,7 +383,7 @@ export default function TimerPage({
       prev.map((s) => (s.id === activeSession.id ? { ...s, note: value } : s))
     );
   };
-  
+
   const runningRef = useRef<WorkSession | null>(null);
   useEffect(() => {
     runningRef.current = running;
@@ -432,7 +433,7 @@ export default function TimerPage({
 
     if (isApiMode) {
       // 【API モード】Rails API へ送信
-      const created = await createCommit({
+      const comicomi:NewCommitInput ={
         projectId,
         startedAt: draftCommit.startedAt,
         endedAt: draftCommit.endedAt,
@@ -445,7 +446,22 @@ export default function TimerPage({
               blob: draftCommit.image.file,
             }
           : undefined,
-      });
+      } 
+      /*const created = await createCommit({
+        projectId,
+        startedAt: draftCommit.startedAt,
+        endedAt: draftCommit.endedAt,
+        note: draftCommit.note,
+        image: draftCommit.image
+          ? {
+              name: draftCommit.image.name,
+              type: draftCommit.image.type,
+              size: draftCommit.image.size,
+              blob: draftCommit.image.file,
+            }
+          : undefined,
+      });*/
+      const created = await createCommit(comicomi);
 
       if (!created) {
         throw new Error("APIへのコミット保存に失敗しました。");
