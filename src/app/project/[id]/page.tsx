@@ -44,11 +44,11 @@ export default function ProjectDetailPage({
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
 
   const refresh = async () => {
+    const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
+
     const [nextProjects, nextCommits] = await Promise.all([
-      loadProjectsIdb(),
-      loadCommitsIdb(),
-      //loadProjects(),
-      //loadCommits(),
+      isApiMode ? loadProjects() : loadProjectsIdb(),
+      isApiMode ? loadCommits() : loadCommitsIdb(),
     ]);
 
     setProjects(nextProjects);

@@ -67,12 +67,13 @@ export default function ProjectsPage() {
   }, []);
 
   const refresh = async () => {
+    // 環境変数によって呼び出す関数を切り替える
+    const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
+
     const [nextProjects, nextCommits, nextSessions] = await Promise.all([
-      loadProjectsIdb(),
-      //loadProjects(),
-      loadCommitsIdb(),
-      //loadCommits(),
-      loadSessionsIdb(),
+      isApiMode ? loadProjects() : loadProjectsIdb(),
+      isApiMode ? loadCommits() : loadCommitsIdb(),
+      loadSessionsIdb(), // Sessions はモードに関わらず常に IndexedDB から取得
     ]);
 
     setProjects(nextProjects);

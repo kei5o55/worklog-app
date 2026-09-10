@@ -68,12 +68,12 @@ export default function TimerPage({
 
     async function init() {
       try {
-        const [loadedProjects, loadedSessions,loadedCommits] = await Promise.all([
-          loadProjectsIdb(),
-          //loadProjects(),
-          loadSessionsIdb(),
-          //loadCommitsIdb(),
-          loadCommits(),
+        const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
+
+        const [loadedProjects, loadedSessions, loadedCommits] = await Promise.all([
+          isApiMode ? loadProjects() : loadProjectsIdb(),
+          loadSessionsIdb(), // WorkSession は常時 IndexedDB から復元
+          isApiMode ? loadCommits() : loadCommitsIdb(),
         ]);
 
         if (cancelled) return;

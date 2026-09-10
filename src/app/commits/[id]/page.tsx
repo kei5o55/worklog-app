@@ -44,12 +44,13 @@ export default function CommitDetailPage({
 
   const refreshData = async () => {
     try {
+      const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
+
       const [nextCommits, nextProjects] = await Promise.all([
-        loadCommitsIdb(),
-        //loadCommits(),
-        loadProjectsIdb(),
-        //loadProjects(),
+        isApiMode ? loadCommits() : loadCommitsIdb(),
+        isApiMode ? loadProjects() : loadProjectsIdb(),
       ]);
+
       setCommits(nextCommits);
       setProjects(nextProjects);
     } catch (error) {
