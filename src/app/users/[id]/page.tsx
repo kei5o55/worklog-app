@@ -232,43 +232,6 @@ export default function UserProfilePage({
             )}
           </div>
 
-          <div className="flex-1 min-w-0">
-            {isMe && isEditingName ? (
-              <div className="flex items-center gap-2 mb-1">
-                <input
-                  type="text"
-                  value={userNameInput}
-                  onChange={(e) => setUserNameInput(e.target.value)}
-                  className="text-2xl font-extrabold text-slate-900 bg-white border border-sky-500 rounded-xl px-3 py-1 focus:outline-none focus:ring-2 focus:ring-sky-500 w-full"
-                />
-                <button
-                  onClick={handleUserNameChange}
-                  className="bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0"
-                >
-                  保存
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 group mb-1">
-                <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 truncate">
-                  {user.name}
-                </h1>
-                {isMe && (
-                  <button
-                    onClick={handleStartEditingName}
-                    className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer shrink-0"
-                    title="ユーザー名を変更"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-            )}
-            <p className="text-sm text-slate-500 line-clamp-2">{user.bio}</p>
-          </div>
-
           {isMe && (
             <button
               onClick={() => setIsEditOpen(true)}

@@ -272,25 +272,6 @@ export default function UserProfilePage() {
                 <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 truncate">
                   {user.name}
                 </h1>
-                <button
-                  onClick={handleStartEditingName}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer shrink-0"
-                  title="ユーザー名を変更"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                    />
-                  </svg>
-                </button>
               </div>
             )}
             <p className="text-sm text-slate-500 line-clamp-2">{user.bio}</p>
@@ -307,7 +288,7 @@ export default function UserProfilePage() {
         {/* 作業BGM入力 / リンク表示 */}
         <div className="w-full sm:w-80 bg-slate-50 border border-slate-200 p-3 rounded-xl space-y-2 shrink-0">
           <span className="text-xs font-semibold text-slate-500 flex items-center gap-1">
-            🎵 作業用BGM / メモ
+             普段よく聞く作業用BGM 
           </span>
           {user.bgmUrl ? (
             <a
@@ -367,7 +348,7 @@ export default function UserProfilePage() {
         {/* 右側: 保存した進捗画像ギャラリー */}
         <section className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <span>🖼️</span> 完成進捗ギャラリー
+            完了プロジェクトギャラリー
             <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
               {imageCommits.length}
             </span>

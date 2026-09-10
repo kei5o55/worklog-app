@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { NewProjectInput } from "../components/CreateProjectModal";
+import type { NewProjectInput } from "../logic/api-types";
 import CreateProjectModal from "../components/CreateProjectModal";
-import type { Project, Commit, WorkSession,ApiProjectResponse } from "../logic/types";
-import ContributionHeatmap from "../components/ContributionHeatmap";
+import type { Project, Commit, WorkSession } from "../logic/types";
 import CalendarBoard from "../components/CalendarBoard";
 import HealthCheckButton from "../components/HealthCheckButton";
 import CommitModal, { type DraftCommit } from "../components/CommitModal"; 
@@ -16,10 +15,9 @@ import {
   addCommitIdb, // ← 追加
 } from "../logic/storage-idb";
 
-import { loadProjects,createProject} from "../logic/api-request";
+import { loadProjects,createProject,loadCommits,createCommit} from "../logic/api-request";
 
 import Link from "next/link";
-import next from "next";
 
 function uid() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -61,18 +59,20 @@ export default function ProjectsPage() {
   const [hasMounted, setHasMounted] = useState(false);
 
   // 表示するタブ（active: 進行中, completed: 完了済み）
-  const [activeTab, setActiveTab] = useState<"active" | "completed">("active");
+  const [activeTab, setActiveTab] = useState<"calender"|"active" | "completed">("active");
 
   useEffect(() => {
     setHasMounted(true);
   }, []);
 
   const refresh = async () => {
+    // 環境変数によって呼び出す関数を切り替える
+    const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
+
     const [nextProjects, nextCommits, nextSessions] = await Promise.all([
-      loadProjectsIdb(),
-      //loadProjects(),
-      loadCommitsIdb(),
-      loadSessionsIdb(),
+      isApiMode ? loadProjects() : loadProjectsIdb(),
+      isApiMode ? loadCommits() : loadCommitsIdb(),
+      loadSessionsIdb(), // Sessions はモードに関わらず常に IndexedDB から取得
     ]);
 
     setProjects(nextProjects);
@@ -182,51 +182,68 @@ export default function ProjectsPage() {
     const name = input.name.trim();
     if (!name) return;
 
-    const th = Number(input.targetHours);
+    // 数値項目のバリデーションとサニタイズ
     const targetHours =
-      input.targetHours.trim() && Number.isFinite(th) && th > 0
-        ? th
+      input.targetHours && Number.isFinite(input.targetHours) && input.targetHours > 0
+        ? input.targetHours
         : undefined;
 
-    const pwm = Number(input.pomodoroWorkMinutes);
     const pomodoroWorkMinutes =
-      input.pomodoroWorkMinutes?.trim() && Number.isFinite(pwm) && pwm > 0
-        ? pwm
+      input.pomodoroWorkMinutes && Number.isFinite(input.pomodoroWorkMinutes) && input.pomodoroWorkMinutes > 0
+        ? input.pomodoroWorkMinutes
         : undefined;
 
-    const pbm = Number(input.pomodoroBreakMinutes);
     const pomodoroBreakMinutes =
-      input.pomodoroBreakMinutes?.trim() && Number.isFinite(pbm) && pbm > 0
-        ? pbm
+      input.pomodoroBreakMinutes && Number.isFinite(input.pomodoroBreakMinutes) && input.pomodoroBreakMinutes > 0
+        ? input.pomodoroBreakMinutes
         : undefined;
 
-    const p: Project = {
-      id: uid(),
+    // 整形済みの入力オブジェクトを作る
+    const sanitizedInput: NewProjectInput = {
+      ...input,
       name,
-      dueDate: input.dueDate?.trim() ? input.dueDate.trim() : undefined,
-      memo: input.memo?.trim() ? input.memo.trim() : undefined,
+      dueDate: input.dueDate?.trim() || undefined,
+      memo: input.memo?.trim() || undefined,
       targetHours,
       pomodoroWorkMinutes,
       pomodoroBreakMinutes,
-      completed: false,
-      createdAt: Date.now(),
     };
 
-    const nextProjects = [p, ...projects];
-    setProjects(nextProjects);
-    await saveProjectsIdb(nextProjects);
-    setIsCreateOpen(false);
-  };
+    // 環境変数の判定（"true" という文字列かどうか）
+    const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
 
-  const onCreate2 = async (input: NewProjectInput) => {
-    try {
-      await createProject(input);
-      const nextProjects = await loadProjects();
+    if (isApiMode) {
+      // 【API モード】Rails API へ送信して更新
+      try {
+        const created = await createProject(sanitizedInput);
+        if (!created) {
+          // API 側でバリデーションエラー等の場合はダイアログを閉じずに中断
+          return;
+        }
+        const nextProjects = await loadProjects();
+        setProjects(nextProjects);
+        setIsCreateOpen(false);
+      } catch (error) {
+        console.error("プロジェクトの作成に失敗しました:", error);
+      }
+    } else {
+      // 【ローカル/オフライン モード】IndexedDB へ保存
+      const p: Project = {
+        id: uid(),
+        name,
+        dueDate: sanitizedInput.dueDate,
+        memo: sanitizedInput.memo,
+        targetHours,
+        pomodoroWorkMinutes,
+        pomodoroBreakMinutes,
+        completed: false,
+        createdAt: Date.now(),
+      };
+
+      const nextProjects = [p, ...projects];
       setProjects(nextProjects);
-      setIsCreateOpen(false); // 成功したときだけ閉じる
-    } catch (error) {
-      console.error("プロジェクトの作成に失敗しました:", error);
-      // エラー通知などを表示する処理
+      await saveProjectsIdb(nextProjects);
+      setIsCreateOpen(false);
     }
   };
 
@@ -267,10 +284,10 @@ export default function ProjectsPage() {
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
-            Binder
+            memomy
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            データはブラウザ（IndexedDB）に安全に保存されます
+            データはブラウザ（IndexedDB）にに保存されます
           </p>
         </div>
 
@@ -333,6 +350,17 @@ export default function ProjectsPage() {
                 {counts.completed}
               </span>
             </button>
+
+            <button
+              onClick={() => setActiveTab("calender")} 
+              className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-2 ${
+                activeTab === "calender"
+                  ? "bg-emerald-700 text-white shadow-sm"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              カレンダー
+            </button>
           </div>
         </div>
 
@@ -340,6 +368,8 @@ export default function ProjectsPage() {
           <div className="flex items-center justify-center p-12 rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 text-slate-400 font-medium text-sm">
             データを読み込み中...
           </div>
+        ) : activeTab === "calender" ? (
+            <CalendarBoard></CalendarBoard>
         ) : filteredProjects.length === 0 ? (
           <div className="text-center py-12 px-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50/50">
             <p className="text-slate-500 font-medium">
@@ -520,6 +550,7 @@ export default function ProjectsPage() {
                   </div>
                 </article>
               );
+              
             })}
           </div>
         )}
@@ -546,24 +577,55 @@ export default function ProjectsPage() {
         onSave={async () => {
           if (!draftCommit || !targetProjectId) return;
 
-          await addCommitIdb({
-            id: uid(),
-            projectId: targetProjectId,
-            startedAt: draftCommit.startedAt,
-            endedAt: draftCommit.endedAt,
-            durationMs: draftCommit.endedAt - draftCommit.startedAt,
-            note: draftCommit.note,
-            image: draftCommit.image
-              ? {
-                  name: draftCommit.image.name,
-                  type: draftCommit.image.type,
-                  size: draftCommit.image.size,
-                  blob: draftCommit.image.file,
-                }
-              : null,
-          });
+          const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
 
-          // クリーンアップとデータ再取得
+          if (isApiMode) {
+            // 【API モード】Rails API へ FormData 送信
+            try {
+              const created = await createCommit({
+                projectId: targetProjectId,
+                startedAt: draftCommit.startedAt,
+                endedAt: draftCommit.endedAt,
+                note: draftCommit.note,
+                image: draftCommit.image
+                  ? {
+                      name: draftCommit.image.name,
+                      type: draftCommit.image.type,
+                      size: draftCommit.image.size,
+                      blob: draftCommit.image.file,
+                    }
+                  : undefined,
+              });
+
+              if (!created) {
+                // API保存が失敗（バリデーションエラー等）した場合はモーダルを閉じずに中断
+                return;
+              }
+            } catch (error) {
+              console.error("コミットの作成に失敗しました:", error);
+              return;
+            }
+          } else {
+            // 【ローカル/オフライン モード】IndexedDB へ保存
+            await addCommitIdb({
+              id: uid(),
+              projectId: targetProjectId,
+              startedAt: draftCommit.startedAt,
+              endedAt: draftCommit.endedAt,
+              durationMs: draftCommit.endedAt - draftCommit.startedAt,
+              note: draftCommit.note,
+              image: draftCommit.image
+                ? {
+                    name: draftCommit.image.name,
+                    type: draftCommit.image.type,
+                    size: draftCommit.image.size,
+                    blob: draftCommit.image.file,
+                  }
+                : null,
+            });
+          }
+
+          // クリーンアップとデータ再取得（共通処理）
           setIsModalOpen(false);
           setDraftCommit(null);
           setTargetProjectId(null);
@@ -574,13 +636,9 @@ export default function ProjectsPage() {
 
       {/* Calendar & Heatmap */}
       <div className="space-y-6 pt-4 border-t border-slate-200">
-        <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-          <CalendarBoard projectsFromParent={projects} />
-        </section>
-
-        <section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        {/*<section className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
           <ContributionHeatmap commits={commitsAll} title="All Activity" />
-        </section>
+        </section>*/}
         <HealthCheckButton></HealthCheckButton>
       </div>
     </main>
