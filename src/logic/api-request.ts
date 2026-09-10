@@ -1,5 +1,5 @@
 import type { NewCommitInput,NewProjectInput } from "./api-types";
-import type { Project ,ApiProjectResponse, Commit, } from "./types";
+import type { Project ,ApiProjectResponse, Commit,DaySchedule, CalendarMemo } from "./types";
 
 const BASE_URL = 'http://localhost:3001/api/v1';
 
@@ -158,4 +158,41 @@ export const createProject = async (inputData: NewProjectInput): Promise<Project
     alert('サーバーとの通信に失敗しました');
     return null;
   }
+};
+
+export const loadDaySchedules = async (): Promise<DaySchedule[]> =>{
+  try{
+    const response = await fetch(`${BASE_URL}/day_schedules`);
+
+    if(!response.ok){
+      throw new Error(`httpエラー status: ${response.status}`);
+    }
+
+    const rawData: apiDayScheduleResponse[] = await response.json();
+
+    const daySchedules: DaySchedule[]= rawData.map((item) => ({
+
+    }));
+
+    return daySchedules;
+  }catch (error){
+    console.error("error ： ",error);
+    return [];
+  }
+};
+
+export const createDaySchedules = async (inputData: NewDaySchedule): Promise<DaySchedule | null> =>{
+  try{
+    const response = await fetch(`"${BASE_URL}`,)
+  }catch(error){
+
+  }
+};
+
+export const loadCalendarMemos = async (): Promise<CalendarMemo[]> =>{
+
+};
+
+export const createCalendarMemo = async (inputData:NewCalendarMemoInput): Promise<CalendarMemo | null> => {
+
 };
