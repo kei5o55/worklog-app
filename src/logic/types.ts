@@ -118,10 +118,10 @@ export type CalendarCell = {
 export const localUser: User[] = [
   {
     id: "1",
-    name: "dbに接続できないよぅ",
-    icon:"https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
-    bio: "なんふぇ？",
-    bgmUrl: "test",
+    name: "InitialUser",
+    icon:"",
+    bio: "初期ユーザーだよぅ",
+    bgmUrl: "https://soundcloud.com/bakuwara/oreranatotomodachi",
     createdAt: 1704067200000, // 2024-01-01T00:00:00.000Z
     updatedAt: 1709251200000, // 2024-03-01T00:00:00.000Z
   },{
@@ -137,10 +137,10 @@ export const localUser: User[] = [
 
 export const initialuUser:User={
     id: "1",
-    name: "dbに接続できないよぅ",
-    icon:"https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
-    bio: "なんふぇ？",
-    bgmUrl: "test",
+    name: "InitialUser",
+    icon:"",
+    bio: "初期ユーザーだよぅ",
+    bgmUrl: "https://soundcloud.com/bakuwara/oreranatotomodachi",
     createdAt: 1704067200000, // 2024-01-01T00:00:00.000Z
     updatedAt: 1709251200000, // 2024-03-01T00:00:00.000Z
 }
