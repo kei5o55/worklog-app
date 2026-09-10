@@ -11,7 +11,7 @@ import {
   addCommitIdb,
   clearSessionsIdb,
 } from "../../../logic/storage-idb";
-import { loadProjects,loadCommits } from "../../../logic/api-request";
+import { loadProjects,loadCommits,createCommit,} from "../../../logic/api-request";
 import { useRouter } from "next/navigation";
 import type { Project, TimerMode, WorkSession,Commit } from "../../../logic/types";
 
@@ -382,12 +382,7 @@ export default function TimerPage({
       prev.map((s) => (s.id === activeSession.id ? { ...s, note: value } : s))
     );
   };
-
-  const clearAll = () => {
-    if (!confirm("全部消す？（戻せない）")) return;
-    setSessions([]);
-  };
-
+  
   const runningRef = useRef<WorkSession | null>(null);
   useEffect(() => {
     runningRef.current = running;
@@ -427,6 +422,53 @@ export default function TimerPage({
     if (!activeSession || !draftCommit) return;
 
     setSessions((prev) => prev.filter((s) => s.id !== activeSession.id));
+  };
+
+  const saveCommitData = async (
+    projectId: string,
+    draftCommit: DraftCommit
+  ) => {
+    const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
+
+    if (isApiMode) {
+      // 【API モード】Rails API へ送信
+      const created = await createCommit({
+        projectId,
+        startedAt: draftCommit.startedAt,
+        endedAt: draftCommit.endedAt,
+        note: draftCommit.note,
+        image: draftCommit.image
+          ? {
+              name: draftCommit.image.name,
+              type: draftCommit.image.type,
+              size: draftCommit.image.size,
+              blob: draftCommit.image.file,
+            }
+          : undefined,
+      });
+
+      if (!created) {
+        throw new Error("APIへのコミット保存に失敗しました。");
+      }
+    } else {
+      // 【ローカル/オフライン モード】IndexedDB へ保存
+      await addCommitIdb({
+        id: uid(),
+        projectId,
+        startedAt: draftCommit.startedAt,
+        endedAt: draftCommit.endedAt,
+        durationMs: draftCommit.endedAt - draftCommit.startedAt,
+        note: draftCommit.note,
+        image: draftCommit.image
+          ? {
+              name: draftCommit.image.name,
+              type: draftCommit.image.type,
+              size: draftCommit.image.size,
+              blob: draftCommit.image.file,
+            }
+          : null,
+      });
+    }
   };
 
   if (loading) {
@@ -566,13 +608,6 @@ export default function TimerPage({
           >
             Stop
           </button>
-
-          <button
-            onClick={clearAll}
-            className="text-sm px-3 py-2 font-medium text-zinc-400 hover:text-red-500 hover:bg-zinc-50 rounded-lg ml-auto transition-colors cursor-pointer"
-          >
-            Clear
-          </button>
         </div>
 
         {/* ポモドーロ切り替え */}
@@ -691,67 +726,37 @@ export default function TimerPage({
           if (!draftCommit || !projectId) return;
 
           try {
-            // 1. IndexedDB (またはバックエンド) に Commit を保存
-            await addCommitIdb({
-              id: uid(),
-              projectId,
-              startedAt: draftCommit.startedAt,
-              endedAt: draftCommit.endedAt,
-              durationMs: draftCommit.endedAt - draftCommit.startedAt,
-              note: draftCommit.note,
-              image: draftCommit.image
-                ? {
-                    name: draftCommit.image.name,
-                    type: draftCommit.image.type,
-                    size: draftCommit.image.size,
-                    blob: draftCommit.image.file,
-                  }
-                : null,
-            });
+            // 1. モードに応じて Commit を保存
+            await saveCommitData(projectId, draftCommit);
+
             finalizeStopSession();
-            // 2. Commit 保存が「成功した場合のみ」セッションを破棄
-            await clearSessionsIdb(); // ← ここで IndexedDB の WorkSession を削除！
+            // 2. Commit 保存成功時のみセッションを破棄
+            await clearSessionsIdb();
 
             // 3. クリーンアップ & 画面遷移
-            
             finalizeAndClose();
             router.push("/");
           } catch (error) {
             console.error("Failed to save commit:", error);
-            // 保存失敗時はセッションを消さずにエラー表示等を行う（データを保護するため）
+            // 保存失敗時はセッションを消さずに保護
           }
         }}
         onSaveAndContinue={async () => {
           if (!draftCommit || !projectId) return;
 
           try {
-            // 1. IndexedDB (またはバックエンド) に Commit を保存
-            await addCommitIdb({
-              id: uid(),
-              projectId,
-              startedAt: draftCommit.startedAt,
-              endedAt: draftCommit.endedAt,
-              durationMs: draftCommit.endedAt - draftCommit.startedAt,
-              note: draftCommit.note,
-              image: draftCommit.image
-                ? {
-                    name: draftCommit.image.name,
-                    type: draftCommit.image.type,
-                    size: draftCommit.image.size,
-                    blob: draftCommit.image.file,
-                  }
-                : null,
-            });
-            finalizeStopSession();
-            // 2. Commit 保存が「成功した場合のみ」セッションを破棄
-            await clearSessionsIdb(); // ← ここで IndexedDB の WorkSession を削除！
+            // 1. モードに応じて Commit を保存
+            await saveCommitData(projectId, draftCommit);
 
-            // 3. クリーンアップ & 画面遷移
-            
+            finalizeStopSession();
+            // 2. Commit 保存成功時のみセッションを破棄
+            await clearSessionsIdb();
+
+            // 3. クリーンアップのみ（画面遷移なしでモーダル閉じ等）
             finalizeAndClose();
           } catch (error) {
             console.error("Failed to save commit:", error);
-            // 保存失敗時はセッションを消さずにエラー表示等を行う（データを保護するため）
+            // 保存失敗時はセッションを消さずに保護
           }
         }}
       />

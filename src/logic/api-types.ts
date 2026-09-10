@@ -1,13 +1,6 @@
-import type { CalendarMemo, Commit, DaySchedule } from "./types";
+import type { CalendarMemo, Commit, DaySchedule, Project } from "./types";
 
-export type NewProjectInput = {
-  name: string;
-  dueDate: string;
-  memo: string;
-  targetHours: string; // "" or "10" などの文字列
-  pomodoroWorkMinutes?: string; // "" or "25" などの文字列
-  pomodoroBreakMinutes?: string;
-};
+export type NewProjectInput = Omit<Project,"id">
 
 
 //rails側で一意のuuidを付けるため、インプットはid無しで作る

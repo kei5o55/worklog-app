@@ -182,51 +182,68 @@ export default function ProjectsPage() {
     const name = input.name.trim();
     if (!name) return;
 
-    const th = Number(input.targetHours);
+    // 数値項目のバリデーションとサニタイズ
     const targetHours =
-      input.targetHours.trim() && Number.isFinite(th) && th > 0
-        ? th
+      input.targetHours && Number.isFinite(input.targetHours) && input.targetHours > 0
+        ? input.targetHours
         : undefined;
 
-    const pwm = Number(input.pomodoroWorkMinutes);
     const pomodoroWorkMinutes =
-      input.pomodoroWorkMinutes?.trim() && Number.isFinite(pwm) && pwm > 0
-        ? pwm
+      input.pomodoroWorkMinutes && Number.isFinite(input.pomodoroWorkMinutes) && input.pomodoroWorkMinutes > 0
+        ? input.pomodoroWorkMinutes
         : undefined;
 
-    const pbm = Number(input.pomodoroBreakMinutes);
     const pomodoroBreakMinutes =
-      input.pomodoroBreakMinutes?.trim() && Number.isFinite(pbm) && pbm > 0
-        ? pbm
+      input.pomodoroBreakMinutes && Number.isFinite(input.pomodoroBreakMinutes) && input.pomodoroBreakMinutes > 0
+        ? input.pomodoroBreakMinutes
         : undefined;
 
-    const p: Project = {
-      id: uid(),
+    // 整形済みの入力オブジェクトを作る
+    const sanitizedInput: NewProjectInput = {
+      ...input,
       name,
-      dueDate: input.dueDate?.trim() ? input.dueDate.trim() : undefined,
-      memo: input.memo?.trim() ? input.memo.trim() : undefined,
+      dueDate: input.dueDate?.trim() || undefined,
+      memo: input.memo?.trim() || undefined,
       targetHours,
       pomodoroWorkMinutes,
       pomodoroBreakMinutes,
-      completed: false,
-      createdAt: Date.now(),
     };
 
-    const nextProjects = [p, ...projects];
-    setProjects(nextProjects);
-    await saveProjectsIdb(nextProjects);
-    setIsCreateOpen(false);
-  };
+    // 環境変数の判定（"true" という文字列かどうか）
+    const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
 
-  const onCreate2 = async (input: NewProjectInput) => {
-    try {
-      await createProject(input);
-      const nextProjects = await loadProjects();
+    if (isApiMode) {
+      // 【API モード】Rails API へ送信して更新
+      try {
+        const created = await createProject(sanitizedInput);
+        if (!created) {
+          // API 側でバリデーションエラー等の場合はダイアログを閉じずに中断
+          return;
+        }
+        const nextProjects = await loadProjects();
+        setProjects(nextProjects);
+        setIsCreateOpen(false);
+      } catch (error) {
+        console.error("プロジェクトの作成に失敗しました:", error);
+      }
+    } else {
+      // 【ローカル/オフライン モード】IndexedDB へ保存
+      const p: Project = {
+        id: uid(),
+        name,
+        dueDate: sanitizedInput.dueDate,
+        memo: sanitizedInput.memo,
+        targetHours,
+        pomodoroWorkMinutes,
+        pomodoroBreakMinutes,
+        completed: false,
+        createdAt: Date.now(),
+      };
+
+      const nextProjects = [p, ...projects];
       setProjects(nextProjects);
-      setIsCreateOpen(false); // 成功したときだけ閉じる
-    } catch (error) {
-      console.error("プロジェクトの作成に失敗しました:", error);
-      // エラー通知などを表示する処理
+      await saveProjectsIdb(nextProjects);
+      setIsCreateOpen(false);
     }
   };
 
