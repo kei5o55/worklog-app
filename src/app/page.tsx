@@ -6,6 +6,7 @@ import CreateProjectModal from "../components/CreateProjectModal";
 import type { Project, Commit, WorkSession } from "../logic/types";
 import CalendarBoard from "../components/CalendarBoard";
 import HealthCheckButton from "../components/HealthCheckButton";
+import { DataMigrationButton } from "../components/MigrationButton";
 import CommitModal, { type DraftCommit } from "../components/CommitModal"; 
 import {
   loadProjectsIdb,
@@ -676,6 +677,7 @@ export default function ProjectsPage() {
           <ContributionHeatmap commits={commitsAll} title="All Activity" />
         </section>*/}
         <HealthCheckButton></HealthCheckButton>
+        <DataMigrationButton></DataMigrationButton>
       </div>
     </main>
   );

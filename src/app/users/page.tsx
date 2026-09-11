@@ -29,7 +29,7 @@ export const initialUser: User = {
 
 export default function UserProfilePage() {
   const [commitsAll, setCommitsAll] = useState<Commit[]>([]);
-  const [sessionsAll, setSessionsAll] = useState<WorkSession[]>([]);
+  const [, setSessionsAll] = useState<WorkSession[]>([]);
   const [user, setUserProfile] = useState<User>(initialUser);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
