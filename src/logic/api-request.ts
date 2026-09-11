@@ -97,6 +97,24 @@ export const createCommit = async (inputData: NewCommitInput): Promise<Commit | 
   }
 };
 
+export const deleteCommit = async (inputData:Commit): Promise<boolean> =>{
+    try {
+    const response = await fetch(`${BASE_URL}/projects/${inputData.projectId}/${inputData.id}`, {
+      method: "DELETE", 
+    });
+
+    if (!response.ok) {
+      console.error(`削除失敗: ${response.status} ${response.statusText}`);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("ネットワークエラー！:", error);
+    return false;
+  }
+}
+
 // プロジェクトを取得する API
 export const loadProjects = async (): Promise<Project[]> => {
   try {
@@ -176,6 +194,24 @@ export const createProject = async (inputData: NewProjectInput): Promise<Project
     return null;
   }
 };
+
+export const deleteProject = async (id:string): Promise<boolean> => {
+    try {
+    const response = await fetch(`${BASE_URL}/projects/${id}`, {
+      method: "DELETE", 
+    });
+
+    if (!response.ok) {
+      console.error(`削除失敗: ${response.status} ${response.statusText}`);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("ネットワークエラー！:", error);
+    return false;
+  }
+}
 
 export const loadDaySchedules = async (): Promise<DaySchedule[]> => {
   try {

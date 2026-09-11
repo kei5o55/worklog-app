@@ -17,7 +17,7 @@ import {
 
 const BASE_URL = 'http://localhost:3001';
 
-import { loadProjects,createProject,loadCommits,createCommit} from "../logic/api-request";
+import { loadProjects,createProject,loadCommits,createCommit,deleteProject} from "../logic/api-request";
 
 import Link from "next/link";
 
@@ -291,9 +291,24 @@ export default function ProjectsPage() {
     const label = target ? `「${target.name}」` : "このプロジェクト";
     if (!confirm(`${label}を削除します。よろしいですか？`)) return;
 
-    const nextProjects = projects.filter((p) => p.id !== id);
-    setProjects(nextProjects);
-    await saveProjectsIdb(nextProjects);
+    const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
+
+    if (isApiMode) {
+      // API モード: Rails バックエンドの DELETE /api/v1/projects/:id を実行
+      const success = await deleteProject(id);
+
+      if (success) {
+        // APIでの削除成功時のみフロントの State を更新
+        setProjects((prev) => prev.filter((p) => p.id !== id));
+      } else {
+        alert("プロジェクトの削除に失敗しました。時間をおいて再度お試しください。");
+      }
+    } else {
+      // ローカルモード: IndexedDB のデータを更新
+      const nextProjects = projects.filter((p) => p.id !== id);
+      setProjects(nextProjects);
+      await saveProjectsIdb(nextProjects);
+    }
   };
 
   if (!hasMounted) {

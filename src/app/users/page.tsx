@@ -79,12 +79,6 @@ export default function UserProfilePage() {
     return () => window.removeEventListener("focus", onFocus);
   }, []);
 
-  // インライン名前編集の開始
-  const handleStartEditingName = () => {
-    setUserNameInput(user.name);
-    setIsEditingName(true);
-  };
-
   // インライン名前編集の保存
   const handleUserNameChange = async () => {
     if (!userNameInput.trim()) return;
