@@ -289,7 +289,7 @@ export default function UserProfilePage() {
         {/* 作業BGM入力 / リンク表示 */}
         <div className="w-full sm:w-80 bg-slate-50 border border-slate-200 p-3 rounded-xl space-y-2 shrink-0">
           <span className="text-xs font-semibold text-slate-500 flex items-center gap-1">
-             普段よく聞く作業用BGM 
+             よく聞く作業用BGM 
           </span>
           {user.bgmUrl ? (
             <a
@@ -302,7 +302,7 @@ export default function UserProfilePage() {
             </a>
           ) : (
             <span className="text-xs text-slate-400 block">
-              BGM URLが設定されていません
+              BGM URLが設定されていません 
             </span>
           )}
         </div>
