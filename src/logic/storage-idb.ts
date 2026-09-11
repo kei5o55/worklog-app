@@ -290,6 +290,13 @@ export async function clearCalendarMemosIdb(): Promise<void> {
   await db.clear(STORE_NAMES.calendarMemos);
 }
 
+export async function deleteProjectDb(id: string): Promise<void> {
+  const db = await dbPromise;
+  if (!db) return;
+  await db.delete(STORE_NAMES.projects, id);
+}
+
+
 // ===== Day Schedules =====
 export async function loadDaySchedulesIdb(): Promise<DaySchedule[]> {
   const db = await dbPromise;

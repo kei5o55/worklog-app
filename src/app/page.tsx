@@ -12,6 +12,7 @@ import {
   saveProjectsIdb,
   loadCommitsIdb,
   loadSessionsIdb,
+  deleteProjectDb,
   addCommitIdb, // ← 追加
 } from "../logic/storage-idb";
 
@@ -298,16 +299,14 @@ export default function ProjectsPage() {
       const success = await deleteProject(id);
 
       if (success) {
-        // APIでの削除成功時のみフロントの State を更新
         setProjects((prev) => prev.filter((p) => p.id !== id));
       } else {
         alert("プロジェクトの削除に失敗しました。時間をおいて再度お試しください。");
       }
     } else {
-      // ローカルモード: IndexedDB のデータを更新
-      const nextProjects = projects.filter((p) => p.id !== id);
-      setProjects(nextProjects);
-      await saveProjectsIdb(nextProjects);
+      // ⭕️ ローカルモード: IDB から指定 ID のみ削除（全消去の危険性を排除）
+      await deleteProjectDb(id); // ← 作成した個別削除関数を呼ぶ
+      setProjects((prev) => prev.filter((p) => p.id !== id));
     }
   };
 
