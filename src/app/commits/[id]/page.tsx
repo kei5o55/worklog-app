@@ -12,6 +12,8 @@ import {
 import {loadCommits,loadProjects} from "../../../logic/api-request"
 import type { Commit, Project } from "../../../logic/types";
 
+const BASE_URL = 'http://localhost:3001/';
+
 function pad2(n: number) {
   return String(n).padStart(2, "0");
 }
@@ -109,9 +111,17 @@ export default function CommitDetailPage({
       return () => {
         URL.revokeObjectURL(url);
       };
-    } else{
+    } else if(typeof commit.image === 'string'){
+      const fullurl =`${BASE_URL}/${commit.image}`;
+      setImageUrl(fullurl);
+      
+      return () => {
+        URL.revokeObjectURL(fullurl);
+      };
+    } else {
       setImageUrl(null);
     }
+    
   }, [commit]);
 
   const handleSaveNote = async () => {
