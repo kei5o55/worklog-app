@@ -15,6 +15,9 @@ import type {
   CalendarMemo,
   Commit,
 } from "../logic/types";
+import { loadProjects,loadCalendarMemos,loadCommits,createCalendarMemo,deleteCalendarMemo } from "../logic/api-request";
+
+const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
 
 type CalendarPageProps = {
   projectsFromParent?: Project[];
@@ -39,12 +42,25 @@ export default function CalendarPage({
 
     async function init() {
       try {
+        // APIモードとローカルモードで取得処理を分岐
+        const projectsPromise = projectsFromParent
+          ? Promise.resolve(projectsFromParent)
+          : isApiMode
+          ? loadProjects() // Rails バックエンドから取得
+          : loadProjectsIdb(); // IndexedDB から取得
+
+        const memosPromise = isApiMode
+          ? loadCalendarMemos() // Rails API (必要に応じて関数名は合わせてください)
+          : loadCalendarMemosIdb();
+
+        const commitsPromise = isApiMode
+          ? loadCommits() // Rails API (必要に応じて関数名は合わせてください)
+          : loadCommitsIdb();
+
         const [loadedProjects, loadedMemos, loadedCommits] = await Promise.all([
-          projectsFromParent
-            ? Promise.resolve(projectsFromParent)
-            : loadProjectsIdb(),
-          loadCalendarMemosIdb(),
-          loadCommitsIdb(),
+          projectsPromise,
+          memosPromise,
+          commitsPromise,
         ]);
 
         if (cancelled) return;
@@ -52,6 +68,8 @@ export default function CalendarPage({
         setProjects(loadedProjects);
         setMemos(loadedMemos);
         setCommits(loadedCommits);
+      } catch (error) {
+        console.error("Failed to load initial data:", error);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -62,41 +80,103 @@ export default function CalendarPage({
     return () => {
       cancelled = true;
     };
-  }, [projectsFromParent]);
+  }, [projectsFromParent, isApiMode]);
 
   const handleAddMemo = async (date: string) => {
     const text = window.prompt(`${date} のメモを入力してください`);
     if (!text || !text.trim()) return;
 
-    const newMemo = {
-      id: crypto.randomUUID(),
-      date,
-      text: text.trim(),
-      createdAt: Date.now(),
-    };
+    const trimmedText = text.trim();
 
-    await addCalendarMemoIdb(newMemo);
+    if (isApiMode) {
+      // 🌐 API モード: Rails バックエンドへ POST リクエスト送信
+      try {
+        // Rails側で作成されたレコード（IDや作成日時が含まれる）を受け取る
+        const createdMemo = await createCalendarMemo({
+          date,
+          text: trimmedText,
+        });
 
-    setMemos((prev) => [...prev, newMemo]);
+        if (!createdMemo) throw new Error("Failed to create memo");
 
-    if (selectedCell && selectedCell.date === date) {
-      setSelectedCell({
-        ...selectedCell,
-        memos: [...selectedCell.memos, newMemo],
-      });
+        setMemos((prev) => [...prev, createdMemo]);
+
+        if (selectedCell && selectedCell.date === date) {
+          setSelectedCell((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  memos: [...prev.memos, createdMemo],
+                }
+              : null
+          );
+        }
+      } catch (error) {
+        console.error("Failed to add memo:", error);
+        alert("メモの追加に失敗しました");
+      }
+    } else {
+      // 💾 ローカルモード: IndexedDB に保存
+      const newMemo = {
+        id: crypto.randomUUID(),
+        date,
+        text: trimmedText,
+        createdAt: Date.now(),
+      };
+
+      await addCalendarMemoIdb(newMemo);
+
+      setMemos((prev) => [...prev, newMemo]);
+
+      if (selectedCell && selectedCell.date === date) {
+        setSelectedCell((prev) =>
+          prev
+            ? {
+                ...prev,
+                memos: [...prev.memos, newMemo],
+              }
+            : null
+        );
+      }
     }
   };
 
   const handleDeleteMemo = async (memoId: string) => {
-    await deleteCalendarMemoIdb(memoId);
+    // 元のステートを保持（ロールバック用）
+    const previousMemos = [...memos];
+    const previousSelectedCell = selectedCell ? { ...selectedCell } : null;
 
+    // 先にUI側のステートを更新（楽観的更新）
     setMemos((prev) => prev.filter((m) => m.id !== memoId));
-
     if (selectedCell) {
-      setSelectedCell({
-        ...selectedCell,
-        memos: selectedCell.memos.filter((m) => m.id !== memoId),
-      });
+      setSelectedCell((prev) =>
+        prev
+          ? {
+              ...prev,
+              memos: prev.memos.filter((m) => m.id !== memoId),
+            }
+          : null
+      );
+    }
+
+    try {
+      if (isApiMode) {
+        // 🌐 API モード: Rails バックエンドへ DELETE リクエスト送信
+        const success = await deleteCalendarMemo(memoId);
+        if (!success) {
+          throw new Error("Failed to delete memo on server");
+        }
+      } else {
+        // 💾 ローカルモード: IndexedDB から削除
+        await deleteCalendarMemoIdb(memoId);
+      }
+    } catch (error) {
+      console.error("Failed to delete memo:", error);
+      alert("メモの削除に失敗しました");
+
+      // 失敗した場合は元の状態にロールバック
+      setMemos(previousMemos);
+      setSelectedCell(previousSelectedCell);
     }
   };
 

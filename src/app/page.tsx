@@ -18,6 +18,7 @@ import {
 } from "../logic/storage-idb";
 
 const BASE_URL = 'http://localhost:3001';
+const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
 
 import { loadProjects,createProject,loadCommits,createCommit,deleteProject,updateProject} from "../logic/api-request";
 
@@ -71,7 +72,7 @@ export default function ProjectsPage() {
 
   const refresh = async () => {
     // 環境変数によって呼び出す関数を切り替える
-    const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
+   
 
     const [nextProjects, nextCommits, nextSessions] = await Promise.all([
       isApiMode ? loadProjects() : loadProjectsIdb(),
@@ -292,7 +293,7 @@ export default function ProjectsPage() {
     const nextProjects = projects.map((p) =>
       p.id === project.id ? updatedTargetProject : p
     );
-    setProjects(nextProjects);
+    //setProjects(nextProjects);
 
     if (isApiMode) {
       // 🌐 API モード: Rails バックエンドへ PATCH リクエスト送信
@@ -302,10 +303,11 @@ export default function ProjectsPage() {
         alert("ステータスの更新に失敗しました");
         // 失敗した場合は元の状態に戻す (ロールバック)
         setProjects(projects);
-      }
-      const nexProjects = await loadProjects();
+      }else if(updated){
+        const nexProjects = await loadProjects();
 
-      setProjects(nexProjects);
+        setProjects(nexProjects);
+      }
     } else {
       // 💾 ローカルモード: IndexedDB に保存
       await saveProjectsIdb(nextProjects);
@@ -702,7 +704,7 @@ export default function ProjectsPage() {
           <ContributionHeatmap commits={commitsAll} title="All Activity" />
         </section>*/}
         <HealthCheckButton></HealthCheckButton>
-        <DataMigrationButton></DataMigrationButton>
+        {/*<DataMigrationButton></DataMigrationButton>*/}
       </div>
     </main>
   );

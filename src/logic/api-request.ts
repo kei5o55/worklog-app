@@ -357,7 +357,6 @@ export const createCalendarMemo = async (inputData: NewCalendarMemoInput): Promi
         calendar_memo: {
           text: inputData.text,
           date: inputData.date,
-          created_at: inputData.createdAt,
         },
       }),
     });

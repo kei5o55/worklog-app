@@ -11,5 +11,5 @@ export type NewCommitInput = Omit<Commit, 'id' | 'durationMs'>;
 
 export type NewDayScheduleInput= Omit<DaySchedule, 'id'>;
 
-export type NewCalendarMemoInput= Omit<CalendarMemo,'id'>;
+export type NewCalendarMemoInput= Omit<CalendarMemo,'id' | 'createdAt'>;
 
