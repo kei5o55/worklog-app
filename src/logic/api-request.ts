@@ -197,7 +197,7 @@ export const createProject = async (inputData: NewProjectInput): Promise<Project
 
 export const updateProject = async (inputData:Project): Promise<Project | null> =>{
   try{
-    const response = await fetch(`${BASE_URL}/project${inputData.id}`,{
+    const response = await fetch(`${BASE_URL}/projects/${inputData.id}`,{
       method:"PATCH",
       headers: {
         'Content-Type': 'application/json',

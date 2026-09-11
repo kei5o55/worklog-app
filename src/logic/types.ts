@@ -104,7 +104,7 @@ export type CalendarCell = {
   date: string; // "YYYY-MM-DD"
   isCurrentMonth: boolean;
   isCurrendDay: boolean;
-  projects: Project[]; // その日に進行中のプロジェクト
+  projects?: Project[]; // その日に進行中のプロジェクト
   dueProjects: Project[]; // 納期がその日のプロジェクト
   memos: CalendarMemo[];
   commits: Commit[];

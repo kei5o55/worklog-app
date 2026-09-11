@@ -7,12 +7,13 @@ import {
   loadCommitsIdb,
   saveProjectsIdb,
 } from "../../../logic/storage-idb";
-import { loadCommits,loadProjects, } from "../../../logic/api-request";
+import { loadCommits,loadProjects,updateProject } from "../../../logic/api-request";
 import type { Project, Commit } from "../../../logic/types";
 import Link from "next/link";
 import { use } from "react";
 
 const BASE_URL = 'http://localhost:3001/';
+const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
 
 function pad2(n: number) {
   return String(n).padStart(2, "0");
@@ -183,68 +184,97 @@ export default function ProjectDetailPage({
     );
   }
 
-  const handleSavePomodoroSettings = () => {
+  // 1. ポモドーロ設定の保存
+  const handleSavePomodoroSettings = async () => {
     if (!project) return;
 
     const work = Number(workMinutesInput);
     const rest = Number(breakMinutesInput);
 
+    const updatedTargetProject = {
+      ...project,
+      pomodoroWorkMinutes:
+        workMinutesInput.trim() && Number.isFinite(work) && work > 0
+          ? work
+          : undefined,
+      pomodoroBreakMinutes:
+        breakMinutesInput.trim() && Number.isFinite(rest) && rest > 0
+          ? rest
+          : undefined,
+    };
+
     const nextProjects = projects.map((p) =>
-      p.id === project.id
-        ? {
-            ...p,
-            pomodoroWorkMinutes:
-              workMinutesInput.trim() && Number.isFinite(work) && work > 0
-                ? work
-                : undefined,
-            pomodoroBreakMinutes:
-              breakMinutesInput.trim() && Number.isFinite(rest) && rest > 0
-                ? rest
-                : undefined,
-          }
-        : p,
+      p.id === project.id ? updatedTargetProject : p
     );
 
+    // ステートを即時更新（楽観的UI更新）
     setProjects(nextProjects);
-    saveProjectsIdb(nextProjects);
+
+    if (isApiMode) {
+      const updated = await updateProject(updatedTargetProject);
+      if (!updated) {
+        alert("設定の更新に失敗しました");
+        // 必要に応じて refreshData() などでロールバック
+      }
+    } else {
+      await saveProjectsIdb(nextProjects);
+    }
   };
 
-  const handleSaveProjectMemo = () => {
+  // 2. プロジェクトメモの保存
+  const handleSaveProjectMemo = async () => {
     if (!project) return;
 
     const trimmed = projectMemoInput.trim();
 
+    const updatedTargetProject = {
+      ...project,
+      memo: trimmed ? trimmed : undefined,
+    };
+
     const nextProjects = projects.map((p) =>
-      p.id === project.id
-        ? {
-            ...p,
-            memo: trimmed ? trimmed : undefined,
-          }
-        : p,
+      p.id === project.id ? updatedTargetProject : p
     );
 
     setProjects(nextProjects);
-    void saveProjectsIdb(nextProjects);
+
+    if (isApiMode) {
+      const updated = await updateProject(updatedTargetProject);
+      if (!updated) {
+        alert("メモの保存に失敗しました");
+      }
+    } else {
+      await saveProjectsIdb(nextProjects);
+    }
   };
 
-  const handleSaveProjectName = () => {
+  // 3. プロジェクト名の保存
+  const handleSaveProjectName = async () => {
     if (!project) return;
 
     const trimmed = projectNameInput.trim();
     if (!trimmed) return;
 
+    const updatedTargetProject = {
+      ...project,
+      name: trimmed,
+    };
+
     const nextProjects = projects.map((p) =>
-      p.id === project.id
-        ? {
-            ...p,
-            name: trimmed,
-          }
-        : p,
+      p.id === project.id ? updatedTargetProject : p
     );
 
     setProjects(nextProjects);
-    void saveProjectsIdb(nextProjects);
     setIsEditingName(false);
+
+    if (isApiMode) {
+      const updated = await updateProject(updatedTargetProject);
+      if (!updated) {
+        alert("プロジェクト名の変更に失敗しました");
+      }
+    } else {
+      await saveProjectsIdb(nextProjects);
+    }
   };
 
   const targetMs = project.targetHours
