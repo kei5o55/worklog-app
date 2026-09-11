@@ -1,6 +1,5 @@
 // logic/migration.ts
 import { loadCommitsIdb, loadProjectsIdb } from "./storage-idb";
-import type { Commit, Project } from "./types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 

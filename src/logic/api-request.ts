@@ -195,6 +195,41 @@ export const createProject = async (inputData: NewProjectInput): Promise<Project
   }
 };
 
+export const updateProject = async (inputData:Project): Promise<Project | null> =>{
+  try{
+    const response = await fetch(`${BASE_URL}/project${inputData.id}`,{
+      method:"PATCH",
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        project: {
+          name: inputData.name,
+          due_date: inputData.dueDate,
+          completed: inputData.completed ?? false,
+          memo: inputData.memo,
+          target_hours: inputData.targetHours,
+          // Rails 側で秒(sec)または分(minutes)どちらで受け取るかに合わせてキー名を調整
+          pomodoro_work_minutes: inputData.pomodoroWorkMinutes,
+          pomodoro_break_minutes: inputData.pomodoroBreakMinutes,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("Project update failed:", response.status, response.statusText);
+      return null;
+    }
+
+    // 💡 成功時はレスポンスの JSON データを返す
+    const updatedProject: Project = await response.json();
+    return updatedProject;
+  } catch (error) {
+    console.error("Error in updateProject:", error);
+    return null;
+  }
+};
+
 export const deleteProject = async (id:string): Promise<boolean> => {
     try {
     const response = await fetch(`${BASE_URL}/projects/${id}`, {
