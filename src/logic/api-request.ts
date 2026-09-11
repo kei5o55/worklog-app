@@ -14,22 +14,40 @@ export const loadCommits = async (): Promise<Commit[]> => {
 
     const rawData = await response.json();
 
-    console.log("送られたデータ : ",rawData)
+    console.log("送られたデータ : ", rawData);
 
-    const commits: Commit[] = rawData.map((item: any) => ({
-      id: item.id,
-      projectId: item.projectId,
-      startedAt: item.startedAt,
-      endedAt: item.endedAt,
-      durationMs: item.durationMs ?? (item.endedAt - item.startedAt),
-      note: item.note,
-      image: item.image ?? null,
-    }));
-    console.log("取得データ: ",commits)
+    const commits: Commit[] = rawData.map((item: any) => {
+      // 1. ISO文字列 (または数数値) を Date オブジェクト経由でミリ秒数値に変換
+      const startedAtMs = typeof item.startedAt === 'number' 
+        ? item.startedAt 
+        : new Date(item.startedAt).getTime();
+
+      const endedAtMs = typeof item.endedAt === 'number' 
+        ? item.endedAt 
+        : new Date(item.endedAt).getTime();
+
+      // 2. durationMs が null / NaN / undefined の場合は、ミリ秒の差分から自動計算
+      const computedDuration = 
+        typeof item.durationMs === 'number' && !isNaN(item.durationMs)
+          ? item.durationMs
+          : endedAtMs - startedAtMs;
+
+      return {
+        id: item.id,
+        projectId: item.projectId,
+        startedAt: startedAtMs,
+        endedAt: endedAtMs,
+        durationMs: computedDuration,
+        note: item.note,
+        image: item.image ?? null,
+      };
+    });
+
+    console.log("取得データ: ", commits);
 
     return commits;
   } catch (error) {
-    console.error("エラー発生:", error);
+    console.error("コミット一覧の取得に失敗しました:", error);
     return [];
   }
 };
