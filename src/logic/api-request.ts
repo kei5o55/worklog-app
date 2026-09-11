@@ -14,15 +14,18 @@ export const loadCommits = async (): Promise<Commit[]> => {
 
     const rawData = await response.json();
 
+    console.log("送られたデータ : ",rawData)
+
     const commits: Commit[] = rawData.map((item: any) => ({
       id: item.id,
-      projectId: item.project_id,
-      startedAt: item.started_at,
-      endedAt: item.ended_at,
-      durationMs: item.duration_ms ?? (item.ended_at - item.started_at),
+      projectId: item.projectId,
+      startedAt: item.startedAt,
+      endedAt: item.endedAt,
+      durationMs: item.durationMs ?? (item.endedAt - item.startedAt),
       note: item.note,
       image: item.image ?? null,
     }));
+    console.log("取得データ: ",commits)
 
     return commits;
   } catch (error) {
