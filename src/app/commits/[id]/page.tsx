@@ -9,7 +9,7 @@ import {
   loadProjectsIdb,
   saveCommitsIdb,
 } from "../../../logic/storage-idb";
-import {loadCommits,loadProjects} from "../../../logic/api-request"
+import {loadCommits,loadProjects,deleteCommit} from "../../../logic/api-request"
 import type { Commit, Project } from "../../../logic/types";
 
 const BASE_URL = 'http://localhost:3001/';
@@ -114,7 +114,7 @@ export default function CommitDetailPage({
     } else if(typeof commit.image === 'string'){
       const fullurl =`${BASE_URL}/${commit.image}`;
       setImageUrl(fullurl);
-      
+
       return () => {
         URL.revokeObjectURL(fullurl);
       };
@@ -140,10 +140,23 @@ export default function CommitDetailPage({
     if (!commit) return;
     if (!window.confirm("このコミットを削除しますか？")) return;
 
-    const nextCommits = commits.filter((c) => c.id !== commit.id);
-    await saveCommitsIdb(nextCommits);
+    const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
 
-    // 削除後は /project/[id] (単数形) か トップへリダイレクト
+    if (isApiMode) {
+      // 🌐 API モード: Rails バックエンドへ DELETE リクエスト送信
+      const success = await deleteCommit(commit.id);
+
+      if (!success) {
+        alert("コミットの削除に失敗しました。時間をおいて再度お試しください。");
+        return;
+      }
+    } else {
+      // 💾 ローカルモード: IndexedDB の配列から取り除いて上書き保存
+      const nextCommits = commits.filter((c) => c.id !== commit.id);
+      await saveCommitsIdb(nextCommits);
+    }
+
+    // 削除成功時のみ、プロジェクト詳細画面またはトップへリダイレクト
     if (project) {
       router.push(`/project/${project.id}`);
     } else {

@@ -97,9 +97,9 @@ export const createCommit = async (inputData: NewCommitInput): Promise<Commit | 
   }
 };
 
-export const deleteCommit = async (inputData:Commit): Promise<boolean> =>{
+export const deleteCommit = async (id:string): Promise<boolean> =>{
     try {
-    const response = await fetch(`${BASE_URL}/projects/${inputData.projectId}/${inputData.id}`, {
+    const response = await fetch(`${BASE_URL}/commits/${id}`, {
       method: "DELETE", 
     });
 
