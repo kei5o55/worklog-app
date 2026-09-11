@@ -19,7 +19,7 @@ import {
 
 const BASE_URL = 'http://localhost:3001';
 
-import { loadProjects,createProject,loadCommits,createCommit,deleteProject} from "../logic/api-request";
+import { loadProjects,createProject,loadCommits,createCommit,deleteProject,updateProject} from "../logic/api-request";
 
 import Link from "next/link";
 
@@ -280,12 +280,36 @@ export default function ProjectsPage() {
       return;
     }
 
-    const nextProjects = projects.map((p) =>
-      p.id === project.id ? { ...p, completed: nextStatus } : p
-    );
+    const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
 
+    // 更新対象のプロジェクトオブジェクト
+    const updatedTargetProject: Project = {
+      ...project,
+      completed: nextStatus,
+    };
+
+    // State の即時更新（楽観的UI更新）
+    const nextProjects = projects.map((p) =>
+      p.id === project.id ? updatedTargetProject : p
+    );
     setProjects(nextProjects);
-    await saveProjectsIdb(nextProjects);
+
+    if (isApiMode) {
+      // 🌐 API モード: Rails バックエンドへ PATCH リクエスト送信
+      //ここ、リクエストが二回送信されるからなんか上手くやりたいかも。（ドラフト作ってやるとか）
+      const updated = await updateProject(updatedTargetProject);
+      if (!updated) {
+        alert("ステータスの更新に失敗しました");
+        // 失敗した場合は元の状態に戻す (ロールバック)
+        setProjects(projects);
+      }
+      const nexProjects = await loadProjects();
+
+      setProjects(nexProjects);
+    } else {
+      // 💾 ローカルモード: IndexedDB に保存
+      await saveProjectsIdb(nextProjects);
+    }
   };
 
   const onDelete = async (id: string) => {
