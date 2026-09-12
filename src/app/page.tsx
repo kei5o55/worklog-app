@@ -6,16 +6,21 @@ import CreateProjectModal from "../components/CreateProjectModal";
 import type { Project, Commit, WorkSession } from "../logic/types";
 import CalendarBoard from "../components/CalendarBoard";
 import HealthCheckButton from "../components/HealthCheckButton";
+import { DataMigrationButton } from "../components/MigrationButton";
 import CommitModal, { type DraftCommit } from "../components/CommitModal"; 
 import {
   loadProjectsIdb,
   saveProjectsIdb,
   loadCommitsIdb,
   loadSessionsIdb,
+  deleteProjectDb,
   addCommitIdb, // ← 追加
 } from "../logic/storage-idb";
 
-import { loadProjects,createProject,loadCommits,createCommit} from "../logic/api-request";
+const BASE_URL = 'http://localhost:3001';
+const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
+
+import { loadProjects,createProject,loadCommits,createCommit,deleteProject,updateProject} from "../logic/api-request";
 
 import Link from "next/link";
 
@@ -67,7 +72,7 @@ export default function ProjectsPage() {
 
   const refresh = async () => {
     // 環境変数によって呼び出す関数を切り替える
-    const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
+   
 
     const [nextProjects, nextCommits, nextSessions] = await Promise.all([
       isApiMode ? loadProjects() : loadProjectsIdb(),
@@ -159,11 +164,18 @@ export default function ProjectsPage() {
 
   const latestCommitMap = useMemo(() => {
     const map = new Map<string, Commit>();
+    const isApiMode = process.env.NEXT_PUBLIC_API_MODE === 'true';
 
     for (const c of commitsAll) {
-      const prev = map.get(c.projectId);
+      // 画像が存在するかどうかをモードに応じて判定
+      const hasImage = isApiMode
+        ? typeof c.image === 'string' || Boolean(c.image?.blob)
+        : Boolean(c.image?.blob);
 
-      if (c.image?.blob) {
+      if (hasImage) {
+        const prev = map.get(c.projectId);
+
+        // 最新の endedAt を持つコミットに更新
         if (!prev || prev.endedAt < c.endedAt) {
           map.set(c.projectId, c);
         }
@@ -174,8 +186,21 @@ export default function ProjectsPage() {
   }, [commitsAll]);
 
   function getImageUrl(commit: Commit) {
-    if (!commit.image?.blob) return null;
-    return URL.createObjectURL(commit.image.blob);
+    const isApiMode = process.env.NEXT_PUBLIC_API_MODE === 'true';
+
+    // 1. Blob オブジェクトが存在する場合 (ローカル保存 / 新規選択時)
+    if (commit.image?.blob) {
+      return URL.createObjectURL(commit.image.blob);
+    }
+
+    // 2. APIモードかつ、c.image が文字列 (Rails からの画像パス) の場合
+    if (isApiMode && typeof commit.image === 'string') {
+      console.log(`${BASE_URL}/${commit.image}`);
+      return `${BASE_URL}/${commit.image}`;
+    }
+
+    // 3. 画像が存在しない場合
+    return null;
   }
 
   const onCreate = async (input: NewProjectInput) => {
@@ -256,12 +281,37 @@ export default function ProjectsPage() {
       return;
     }
 
-    const nextProjects = projects.map((p) =>
-      p.id === project.id ? { ...p, completed: nextStatus } : p
-    );
+    const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
 
-    setProjects(nextProjects);
-    await saveProjectsIdb(nextProjects);
+    // 更新対象のプロジェクトオブジェクト
+    const updatedTargetProject: Project = {
+      ...project,
+      completed: nextStatus,
+    };
+
+    // State の即時更新（楽観的UI更新）
+    const nextProjects = projects.map((p) =>
+      p.id === project.id ? updatedTargetProject : p
+    );
+    //setProjects(nextProjects);
+
+    if (isApiMode) {
+      // 🌐 API モード: Rails バックエンドへ PATCH リクエスト送信
+      //ここ、リクエストが二回送信されるからなんか上手くやりたいかも。（ドラフト作ってやるとか）
+      const updated = await updateProject(updatedTargetProject);
+      if (!updated) {
+        alert("ステータスの更新に失敗しました");
+        // 失敗した場合は元の状態に戻す (ロールバック)
+        setProjects(projects);
+      }else if(updated){
+        const nexProjects = await loadProjects();
+
+        setProjects(nexProjects);
+      }
+    } else {
+      // 💾 ローカルモード: IndexedDB に保存
+      await saveProjectsIdb(nextProjects);
+    }
   };
 
   const onDelete = async (id: string) => {
@@ -269,9 +319,22 @@ export default function ProjectsPage() {
     const label = target ? `「${target.name}」` : "このプロジェクト";
     if (!confirm(`${label}を削除します。よろしいですか？`)) return;
 
-    const nextProjects = projects.filter((p) => p.id !== id);
-    setProjects(nextProjects);
-    await saveProjectsIdb(nextProjects);
+    const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
+
+    if (isApiMode) {
+      // API モード: Rails バックエンドの DELETE /api/v1/projects/:id を実行
+      const success = await deleteProject(id);
+
+      if (success) {
+        setProjects((prev) => prev.filter((p) => p.id !== id));
+      } else {
+        alert("プロジェクトの削除に失敗しました。時間をおいて再度お試しください。");
+      }
+    } else {
+      // ⭕️ ローカルモード: IDB から指定 ID のみ削除（全消去の危険性を排除）
+      await deleteProjectDb(id); // ← 作成した個別削除関数を呼ぶ
+      setProjects((prev) => prev.filter((p) => p.id !== id));
+    }
   };
 
   if (!hasMounted) {
@@ -289,6 +352,7 @@ export default function ProjectsPage() {
           <p className="text-xs text-slate-500 mt-1">
             データはブラウザ（IndexedDB）にに保存されます
           </p>
+          <p>現在のモード：{process.env.NEXT_PUBLIC_API_MODE}</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -640,6 +704,7 @@ export default function ProjectsPage() {
           <ContributionHeatmap commits={commitsAll} title="All Activity" />
         </section>*/}
         <HealthCheckButton></HealthCheckButton>
+        {/*<DataMigrationButton></DataMigrationButton>*/}
       </div>
     </main>
   );

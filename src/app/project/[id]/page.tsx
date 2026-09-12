@@ -7,9 +7,13 @@ import {
   loadCommitsIdb,
   saveProjectsIdb,
 } from "../../../logic/storage-idb";
+import { loadCommits,loadProjects,updateProject } from "../../../logic/api-request";
 import type { Project, Commit } from "../../../logic/types";
 import Link from "next/link";
 import { use } from "react";
+
+const BASE_URL = 'http://localhost:3001/';
+const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
 
 function pad2(n: number) {
   return String(n).padStart(2, "0");
@@ -43,9 +47,11 @@ export default function ProjectDetailPage({
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
 
   const refresh = async () => {
+    const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
+
     const [nextProjects, nextCommits] = await Promise.all([
-      loadProjectsIdb(),
-      loadCommitsIdb(),
+      isApiMode ? loadProjects() : loadProjectsIdb(),
+      isApiMode ? loadCommits() : loadCommitsIdb(),
     ]);
 
     setProjects(nextProjects);
@@ -98,9 +104,24 @@ export default function ProjectDetailPage({
       .sort((a, b) => b.endedAt - a.endedAt);
   }, [commitsAll, projectId]);
 
+  const isApiMode = process.env.NEXT_PUBLIC_API_MODE === 'true';
+
   const commitsWithImage = useMemo(() => {
-    return commits.filter((c) => c.image?.blob);
-  }, [commits]);
+    return commits.filter((c) => {
+      if (!c.image) return false;
+
+      if (isApiMode) {
+        // 🌐 APIモード時:
+        // バックエンドから返ってきた URL (string) がある場合、
+        // または送信前に保持している Blob がある場合を対象にする
+        return typeof c.image === 'string' || Boolean(c.image?.blob);
+      } else {
+        // 💾 ローカル(IndexedDB)モード時:
+        // 未送信・ローカル保存の blob オブジェクトを持っている場合のみ対象
+        return Boolean(c.image?.blob);
+      }
+    });
+  }, [commits, isApiMode]);
 
   // Object URL の生成とクリーンアップ（メモリリーク・レンダリングエラーの防止）
   useEffect(() => {
@@ -163,68 +184,97 @@ export default function ProjectDetailPage({
     );
   }
 
-  const handleSavePomodoroSettings = () => {
+  // 1. ポモドーロ設定の保存
+  const handleSavePomodoroSettings = async () => {
     if (!project) return;
 
     const work = Number(workMinutesInput);
     const rest = Number(breakMinutesInput);
 
+    const updatedTargetProject = {
+      ...project,
+      pomodoroWorkMinutes:
+        workMinutesInput.trim() && Number.isFinite(work) && work > 0
+          ? work
+          : undefined,
+      pomodoroBreakMinutes:
+        breakMinutesInput.trim() && Number.isFinite(rest) && rest > 0
+          ? rest
+          : undefined,
+    };
+
     const nextProjects = projects.map((p) =>
-      p.id === project.id
-        ? {
-            ...p,
-            pomodoroWorkMinutes:
-              workMinutesInput.trim() && Number.isFinite(work) && work > 0
-                ? work
-                : undefined,
-            pomodoroBreakMinutes:
-              breakMinutesInput.trim() && Number.isFinite(rest) && rest > 0
-                ? rest
-                : undefined,
-          }
-        : p,
+      p.id === project.id ? updatedTargetProject : p
     );
 
+    // ステートを即時更新（楽観的UI更新）
     setProjects(nextProjects);
-    saveProjectsIdb(nextProjects);
+
+    if (isApiMode) {
+      const updated = await updateProject(updatedTargetProject);
+      if (!updated) {
+        alert("設定の更新に失敗しました");
+        // 必要に応じて refreshData() などでロールバック
+      }
+    } else {
+      await saveProjectsIdb(nextProjects);
+    }
   };
 
-  const handleSaveProjectMemo = () => {
+  // 2. プロジェクトメモの保存
+  const handleSaveProjectMemo = async () => {
     if (!project) return;
 
     const trimmed = projectMemoInput.trim();
 
+    const updatedTargetProject = {
+      ...project,
+      memo: trimmed ? trimmed : undefined,
+    };
+
     const nextProjects = projects.map((p) =>
-      p.id === project.id
-        ? {
-            ...p,
-            memo: trimmed ? trimmed : undefined,
-          }
-        : p,
+      p.id === project.id ? updatedTargetProject : p
     );
 
     setProjects(nextProjects);
-    void saveProjectsIdb(nextProjects);
+
+    if (isApiMode) {
+      const updated = await updateProject(updatedTargetProject);
+      if (!updated) {
+        alert("メモの保存に失敗しました");
+      }
+    } else {
+      await saveProjectsIdb(nextProjects);
+    }
   };
 
-  const handleSaveProjectName = () => {
+  // 3. プロジェクト名の保存
+  const handleSaveProjectName = async () => {
     if (!project) return;
 
     const trimmed = projectNameInput.trim();
     if (!trimmed) return;
 
+    const updatedTargetProject = {
+      ...project,
+      name: trimmed,
+    };
+
     const nextProjects = projects.map((p) =>
-      p.id === project.id
-        ? {
-            ...p,
-            name: trimmed,
-          }
-        : p,
+      p.id === project.id ? updatedTargetProject : p
     );
 
     setProjects(nextProjects);
-    void saveProjectsIdb(nextProjects);
     setIsEditingName(false);
+
+    if (isApiMode) {
+      const updated = await updateProject(updatedTargetProject);
+      if (!updated) {
+        alert("プロジェクト名の変更に失敗しました");
+      }
+    } else {
+      await saveProjectsIdb(nextProjects);
+    }
   };
 
   const targetMs = project.targetHours
@@ -487,34 +537,43 @@ export default function ProjectDetailPage({
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {commitsWithImage.map((c) => {
-              const url = imageUrls[c.id];
+          {commitsWithImage.map((c) => {
+            // 1. imageUrls マップに Blob URL があれば優先
+            // 2. なければ c.image が文字列(相対パス/絶対パス)かを判定して URL を決定
+            const isApiMode = process.env.NEXT_PUBLIC_API_MODE === 'true';
 
-              return (
-                <div
-                  key={c.id}
-                  className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-sm hover:shadow-md transition-all overflow-hidden"
-                >
-                  <Link href={`/commits/${c.id}`}>
-                    {url ? (
-                      <img
-                        src={url}
-                        alt="commit image"
-                        className="w-full h-48 sm:h-56 object-cover rounded-lg border border-slate-100 hover:opacity-90 transition-opacity"
-                      />
-                    ) : (
-                      <div className="w-full h-48 sm:h-56 bg-slate-100 rounded-lg flex items-center justify-center text-xs text-slate-400">
-                        Loading...
-                      </div>
-                    )}
-                  </Link>
+            let displayUrl = imageUrls[c.id];
 
-                  <div className="text-xs text-slate-400 mt-2 text-center font-medium">
-                    {new Date(c.endedAt).toLocaleDateString()}
-                  </div>
-                </div>
-              );
-            })}
+            if (!displayUrl && isApiMode && typeof c.image === 'string') {
+              // すでに http から始まる完全な URL か、相対パスかで安全に結合
+              displayUrl = `${BASE_URL}${c.image}`;
+            }
+
+            return (
+              <div
+                key={c.id}
+                className="bg-white border border-slate-200 rounded-xl p-2.5 shadow-sm hover:shadow-md transition-all overflow-hidden"
+              >
+                <Link href={`/commits/${c.id}`}>
+                  {displayUrl ? (
+                    <img
+                      src={displayUrl}
+                      alt="commit image"
+                      className="w-full h-48 sm:h-56 object-cover rounded-lg border border-slate-100 hover:opacity-90 transition-opacity"
+                    />
+                  ) : (
+                    <div className="w-full h-48 sm:h-56 bg-slate-100 rounded-lg flex items-center justify-center text-xs text-slate-400">
+                      Loading...
+                    </div>
+                  )}
+                </Link>
+
+                <div className="text-xs text-slate-400 mt-2 text-center font-medium">
+        {new Date(c.endedAt).toLocaleDateString()}
+      </div>
+    </div>
+  );
+})}
           </div>
         )}
       </section>

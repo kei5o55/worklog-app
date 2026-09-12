@@ -2,7 +2,11 @@ import type { CalendarCell, Project, Commit, DaySchedule } from "../logic/types"
 import DayScheduleTimeline from "./DayScheduleTimeline";
 import CreateScheduleModal from "./CreateScheduleModal";
 import { useState, useEffect } from "react";
-import { loadDaySchedulesIdb, addDayScheduleIdb } from "../logic/storage-idb";
+import { loadDaySchedulesIdb, addDayScheduleIdb, deleteDayScheduleIdb } from "../logic/storage-idb";
+import { loadDaySchedules,createDaySchedule,deleteDaySchedule } from "../logic/api-request";
+
+const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
+
 
 type Props = {
   cell: CalendarCell | null;
@@ -65,34 +69,88 @@ export default function CalendarDayDetail({
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [schedules, setSchedules] = useState<DaySchedule[]>(initialSchedules);
 
-  // 初回マウント時または IndexedDB の同期用にスケジュールを取得
+  // 初回マウント時または モード変更時にスケジュールを取得
   useEffect(() => {
+    let cancelled = false;
+
     async function fetchSchedules() {
       try {
-        const idbSchedules = await loadDaySchedulesIdb();
-        if (idbSchedules && idbSchedules.length > 0) {
-          setSchedules(idbSchedules);
+        const data = isApiMode
+          ? await loadDaySchedules() // Rails API から取得
+          : await loadDaySchedulesIdb(); // IndexedDB から取得
+
+        if (!cancelled && data) {
+          setSchedules(data);
         }
       } catch (error) {
-        console.error("Failed to load schedules from IndexedDB:", error);
+        console.error("Failed to load schedules:", error);
       }
     }
+
     fetchSchedules();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isApiMode]);
 
   // スケジュール追加ハンドラー
   const handleAddSchedule = async (newSchedule: DaySchedule) => {
+    if (isApiMode) {
+      // 🌐 API モード
+      try {
+        // Rails 側へ保存をリクエストし、生成されたレスポンスデータを受け取る
+        const createdSchedule = await createDaySchedule(newSchedule);
+
+        if (!createdSchedule) {
+          throw new Error("Failed to create schedule on server");
+        }
+
+        setSchedules((prev) => [...prev, createdSchedule]);
+        onAddSchedule?.(createdSchedule);
+      } catch (error) {
+        console.error("Failed to add schedule:", error);
+        alert("スケジュールの追加に失敗しました");
+      }
+    } else {
+      // 💾 ローカルモード (IndexedDB)
+      try {
+        await addDayScheduleIdb(newSchedule);
+
+        setSchedules((prev) => [...prev, newSchedule]);
+        onAddSchedule?.(newSchedule);
+      } catch (error) {
+        console.error("Failed to add schedule to IndexedDB:", error);
+        alert("スケジュールの保存に失敗しました");
+      }
+    }
+  };
+
+  // スケジュール削除ハンドラー
+  const handleDeleteSchedule = async (id: string) => {
+    // ロールバック用に元のステートをバックアップ
+    const previousSchedules = [...schedules];
+
+    // 先にUIを更新（楽観的更新）
+    setSchedules((prev) => prev.filter((s) => s.id !== id));
+
     try {
-      // IndexedDB に保存
-      await addDayScheduleIdb(newSchedule);
-
-      // React State を更新して画面に即時反映
-      setSchedules((prev) => [...prev, newSchedule]);
-
-      // 親コンポーネント側のハンドラーがあれば呼び出す
-      onAddSchedule?.(newSchedule);
+      if (isApiMode) {
+        // 🌐 API モード
+        const success = await deleteDaySchedule(id);
+        if (!success) {
+          throw new Error("Failed to delete schedule on server");
+        }
+      } else {
+        // 💾 ローカルモード
+        await deleteDayScheduleIdb(id);
+      }
     } catch (error) {
-      console.error("Failed to add schedule to IndexedDB:", error);
+      console.error("Failed to delete schedule:", error);
+      alert("スケジュールの削除に失敗しました");
+
+      // 通信エラー時は元の状態に戻す
+      setSchedules(previousSchedules);
     }
   };
 
@@ -180,7 +238,7 @@ export default function CalendarDayDetail({
               <span className="h-2 w-2 rounded-full bg-indigo-500"></span>
               進行中プロジェクト
             </h4>
-            {cell.projects.length === 0 ? (
+            {/*{cell.projects.length === 0 ? (
               <p className="rounded-lg border border-dashed border-gray-200 bg-gray-50/50 p-3 text-xs text-gray-400">進行中のプロジェクトはありません</p>
             ) : (
               <div className="flex flex-wrap gap-2">
@@ -190,7 +248,7 @@ export default function CalendarDayDetail({
                   </span>
                 ))}
               </div>
-            )}
+            )}*/}
           </div>
 
           {/* メモ */}
@@ -257,6 +315,7 @@ export default function CalendarDayDetail({
           schedules={daySchedules}
           commits={cell.commits}
           projects={projects}
+          onDeleteSchedule={handleDeleteSchedule}
         />
       </div>
 

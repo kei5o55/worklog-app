@@ -1,15 +1,8 @@
 //src/components/CreateProjectModal.tsx
 // ここはプロジェクト作成用のモーダル。ProjectsPageから呼び出す
 import { useEffect, useMemo, useState } from "react";
+import type { NewProjectInput } from "../logic/api-types";
 
-export type NewProjectInput = {
-  name: string;
-  dueDate: string;
-  memo: string;
-  targetHours: string; // "" or "10" などの文字列
-  pomodoroWorkMinutes?: string; // "" or "25" などの文字列
-  pomodoroBreakMinutes?: string;
-};
 
 type Props = {
   open: boolean;

@@ -71,7 +71,7 @@ export default function UserProfilePage({
     setUserProfile(targetUser);
     void (async () => {
       setLoading(true);
-      //await refresh();
+      await refresh();
       setLoading(false);
     })();
   }, [userIdFromParams, targetUser]);

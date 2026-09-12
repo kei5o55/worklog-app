@@ -148,9 +148,6 @@ export default function ScheduleCalendar({
                       <div
                         key={project.id}
                         className="truncate rounded px-1.5 py-0.5 text-[10px] font-medium text-white shadow-xs"
-                        style={{
-                          backgroundColor: project.color ?? "#4f46e5",
-                        }}
                         title={project.name}
                       >
                         {project.name}
