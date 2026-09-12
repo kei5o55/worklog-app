@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef,  } from "react";
 import type { ChangeEvent } from "react";
-import type { Project, Commit, WorkSession, User } from "../../logic/types";
+import type { Project, Commit,  User } from "../../logic/types";
 import TotalStatsCard from "../../components/TotalStatsCard";
 import UserProfileModal from "../../components/UserProfileModal";
 import ArtLightbox from "../../components/ArtLightbox";
@@ -11,7 +11,7 @@ import Link from "next/link";
 import {
   loadProjectsIdb,
   loadCommitsIdb,
-  loadSessionsIdb,
+  //loadSessionsIdb,
   loadUserProfileIdb,
   saveUserProfileIdb,
 } from "../../logic/storage-idb";
@@ -35,7 +35,7 @@ export const initialUser: User = {
 
 export default function UserProfilePage() {
   const [commitsAll, setCommitsAll] = useState<Commit[]>([]);
-  const [, setSessionsAll] = useState<WorkSession[]>([]);
+  //const [, setSessionsAll] = useState<WorkSession[]>([]);
   const [user, setUserProfile] = useState<User>(initialUser);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
