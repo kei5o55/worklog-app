@@ -14,6 +14,7 @@ import { use } from "react";
 
 const BASE_URL = 'http://localhost:3001/';
 const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
+export const dynamic = 'force-dynamic';
 
 function pad2(n: number) {
   return String(n).padStart(2, "0");

@@ -16,6 +16,7 @@ import {
 } from "../../../logic/storage-idb";
 
 const CURRENT_LOGGED_IN_USER_ID = "1";
+export const dynamic = 'force-dynamic';
 
 export default function UserProfilePage({
   params,
