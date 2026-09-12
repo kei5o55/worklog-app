@@ -16,6 +16,12 @@ import {
   saveUserProfileIdb,
 } from "../../logic/storage-idb";
 
+import { loadProjects,loadCommits } from "../../logic/api-request";
+
+const isApiMode = process.env.NEXT_PUBLIC_API_MODE === "true";
+const BASE_URL = 'http://localhost:3001';
+
+
 // 初期ユーザーデータ
 export const initialUser: User = {
   id: "usr_01HGB8Z9K1M3N4P5Q6R7S8T9U0",
@@ -48,18 +54,25 @@ export default function UserProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const refresh = async () => {
-    const [nextProjects, nextCommits, nextSessions, nextUser] = await Promise.all([
-      loadProjectsIdb(),
-      loadCommitsIdb(),
-      loadSessionsIdb(),
-      loadUserProfileIdb(),
-    ]);
+    try {
+      // API モードとローカルモードでデータ取得処理を分岐
+      const [nextProjects, nextCommits, nextUser] =
+        await Promise.all([
+          isApiMode ? loadProjects() : loadProjectsIdb(),
+          isApiMode ? loadCommits() : loadCommitsIdb(),
+          //isApiMode ? loadUserProfile() : loadUserProfileIdb(),
+          loadUserProfileIdb(),
+        ]);
 
-    setProjects(nextProjects);
-    setCommitsAll(nextCommits);
-    setSessionsAll(nextSessions);
-    if (nextUser) {
-      setUserProfile(nextUser);
+      setProjects(nextProjects);
+      setCommitsAll(nextCommits);
+      //setSessionsAll(nextSessions);
+
+      if (nextUser) {
+        setUserProfile(nextUser);
+      }
+    } catch (error) {
+      console.error("Failed to refresh data:", error);
     }
   };
 
@@ -136,25 +149,45 @@ export default function UserProfilePage() {
   // 完了済みプロジェクトかつ画像付きのコミット（最新順）
   const imageCommits = useMemo(() => {
     return latestCommits
-      .filter((c) => c.image?.blob)
+      .filter((c) => {
+        if (!c.image) return false;
+
+        // APIモード: 画像パス（文字列）が存在するか
+        // ローカルモード: Blob が存在するか
+        const hasImage = isApiMode
+          ? typeof c.image === "string": Boolean(c.image.blob);
+
+        return hasImage;
+      })
       .filter((c) => completedProjects.some((p) => p.id === c.projectId))
       .sort((a, b) => b.endedAt - a.endedAt);
-  }, [latestCommits, completedProjects]);
+  }, [latestCommits, completedProjects, isApiMode]);
 
-  // BlobからのURL生成とクリーンアップ
+  // ローカルモード時のみ: BlobからのURL生成とクリーンアップ
   useEffect(() => {
+    // APIモード時は URL.createObjectURL の生成自体をスキップ
+    if (isApiMode) {
+      setImageUrlMap({});
+      return;
+    }
+
     const newMap: Record<string, string> = {};
+
     imageCommits.forEach((commit) => {
       if (commit.image?.blob) {
         newMap[commit.id] = URL.createObjectURL(commit.image.blob);
       }
     });
+
     setImageUrlMap(newMap);
 
+    // アンマウント時および依存配列変更時に不要になった Object URL を確実に解放
     return () => {
-      Object.values(newMap).forEach((url) => URL.revokeObjectURL(url));
+      Object.values(newMap).forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
     };
-  }, [imageCommits]);
+  }, [imageCommits, isApiMode]);
 
   if (loading) {
     return (
@@ -355,33 +388,33 @@ export default function UserProfilePage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {imageCommits.map((commit) => {
-                const project = projects.find((p) => p.id === commit.projectId);
-                const imageUrl = imageUrlMap[commit.id];
+            {imageCommits.map((commit) => {
+              const project = projects.find((p) => p.id === commit.projectId);
 
-                return (
-                  <div
-                    key={commit.id}
-                    className="group relative bg-slate-900 rounded-xl overflow-hidden border border-slate-200 aspect-square shadow-sm flex flex-col justify-end"
-                  >
-                    {imageUrl && (
-                      /*<img
-                        src={imageUrl}
-                        alt={commit.note || "進捗画像"}
-                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-200 opacity-90 group-hover:opacity-100"
-                      />*/
-                      <ArtLightbox src={imageUrl} alt={commit.note||"進捗画像"}/>
-                    )}
-                    
+              // 🌐 APIモード: Railsサーバー上の画像パス (`BASE_URL + commit.image`)
+              // 💾 ローカルモード: IndexedDB の Blob から生成した Object URL (`imageUrlMap[commit.id]`)
+              const src = isApiMode?  `${BASE_URL}/${commit.image}`: imageUrlMap[commit.id];
 
-                    <div className="relative z-10 bg-gradient-to-t from-slate-950/90 via-slate-950/50 to-transparent p-2.5 text-white space-y-1">
-                      <span className="text-[10px] text-sky-300 font-medium truncate block">
-                        {project?.name || "プロジェクト"}
-                      </span>
-                    </div>
+              return (
+                <div
+                  key={commit.id}
+                  className="group relative bg-slate-900 rounded-xl overflow-hidden border border-slate-200 aspect-square shadow-sm flex flex-col justify-end"
+                >
+                  {src && (
+                    <ArtLightbox
+                      src={src}
+                      alt={commit.note || "進捗画像"}
+                    />
+                  )}
+
+                  <div className="relative z-10 bg-gradient-to-t from-slate-950/90 via-slate-950/50 to-transparent p-2.5 text-white space-y-1">
+                    <span className="text-[10px] text-sky-300 font-medium truncate block">
+                      {project?.name || "プロジェクト"}
+                    </span>
                   </div>
-                );
-              })}
+                </div>
+              );
+            })}
             </div>
           )}
         </section>

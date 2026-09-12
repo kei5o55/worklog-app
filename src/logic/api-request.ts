@@ -276,7 +276,7 @@ export const loadDaySchedules = async (): Promise<DaySchedule[]> => {
   }
 };
 
-export const createDaySchedules = async (inputData: NewDayScheduleInput): Promise<DaySchedule | null> => {
+export const createDaySchedule = async (inputData: NewDayScheduleInput): Promise<DaySchedule | null> => {
   try {
     const response = await fetch(`${BASE_URL}/day_schedules`, {
       method: `POST`,
@@ -344,6 +344,24 @@ export const loadCalendarMemos = async (): Promise<CalendarMemo[]> => {
   } catch (error) {
     console.error("error: ", error);
     return [];
+  }
+};
+
+export const deleteDaySchedule = async (id:string): Promise<boolean> =>{
+  try{
+    const response = await fetch(`${BASE_URL}/day_schedules/${id}`,{
+      method: "DELETE",
+    });
+
+    if(!response.ok){
+       console.error(`削除失敗: ${response.status} ${response.statusText}`);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("ネットワークエラー！:", error);
+    return false;
   }
 };
 

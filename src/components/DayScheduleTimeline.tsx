@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import type { Commit, Project, DaySchedule } from "../logic/types";
-import { addDayScheduleIdb, deleteDayScheduleIdb } from "../logic/storage-idb";
 
 type Props = {
   schedules: DaySchedule[];
