@@ -28,8 +28,8 @@ jobs:
         run: npx tsc --noEmit
 
       # 3. Next.js ESLint チェック（"next lint" の実行）
-      - name: Lint (Next.js ESLint)
-        run: npx next lint .
+      - name: Lint (ESLint)
+        run: npx eslint .
 
       # 4. Next.js 本番ビルド検証（"next build" の実行）
       - name: Build check
