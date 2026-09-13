@@ -29,7 +29,7 @@ jobs:
 
       # 3. Next.js ESLint チェック（"next lint" の実行）
       - name: Lint (Next.js ESLint)
-        run: npm run lint
+        run: npx next lint .
 
       # 4. Next.js 本番ビルド検証（"next build" の実行）
       - name: Build check
