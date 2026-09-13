@@ -16,8 +16,8 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # Node.js 20系を推奨
-          cache: 'npm'       # npm のキャッシュを有効化
+          node-version: '20'
+          cache: 'npm'
 
       # 1. パッケージの高速・厳密インストール
       - name: Install dependencies
@@ -27,10 +27,10 @@ jobs:
       - name: Type check (TypeScript)
         run: npx tsc --noEmit
 
-      # 3. Next.js ESLint チェック（"next lint" の実行）
+      # 3. Next.js ESLint チェック
       - name: Lint (ESLint)
         run: npx eslint .
 
-      # 4. Next.js 本番ビルド検証（"next build" の実行）
+      # 4. Next.js 本番ビルド検証
       - name: Build check
         run: npm run build
