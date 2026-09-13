@@ -8,7 +8,7 @@ type Props = {
   title?: string;
 };
 
-// --- 日付ユーティリティ (前述の改善版と同様) ---
+// --- 日付ユーティリティ ---
 function dayKey(ts: number) {
   const d = new Date(ts);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -56,15 +56,19 @@ function formatMinutes(min: number) {
 }
 
 export default function ContributionHeatmap({ commits, title }: Props) {
+  // 初回マウント時の「現在時刻」「現在の年」を固定保持（レンダー処理の純粋性を確保）
+  const [nowTs] = useState(() => Date.now());
+  const [currentYear] = useState(() => new Date().getFullYear());
+
   const years = useMemo(() => {
     const set = new Set<number>();
     for (const c of commits) set.add(new Date(c.endedAt).getFullYear());
-    set.add(new Date().getFullYear());
+    set.add(currentYear);
     return Array.from(set).sort((a, b) => b - a);
-  }, [commits]);
+  }, [commits, currentYear]);
 
   const [mode, setMode] = useState<Mode>("last365");
-  const [year, setYear] = useState<number>(years[0] ?? new Date().getFullYear());
+  const [year, setYear] = useState<number>(() => years[0] ?? currentYear);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const statsByDay = useMemo(() => {
@@ -82,14 +86,14 @@ export default function ContributionHeatmap({ commits, title }: Props) {
 
   const range = useMemo(() => {
     if (mode === "last365") {
-      const end = startOfDay(Date.now());
+      const end = startOfDay(nowTs);
       const start = addDays(end, -364);
       return { start, end, label: "Last 365 days" };
     }
     const start = startOfDay(new Date(year, 0, 1).getTime());
     const end = startOfDay(new Date(year, 11, 31).getTime());
     return { start, end, label: String(year) };
-  }, [mode, year]);
+  }, [mode, year, nowTs]);
 
   const aligned = useMemo(() => {
     const startD = new Date(range.start);
@@ -120,7 +124,6 @@ export default function ContributionHeatmap({ commits, title }: Props) {
     return cols;
   }, [aligned, statsByDay, range]);
 
-  // 月ラベルの計算（表示位置のピクセルオフセット付き）
   const monthLabels = useMemo(() => {
     const labels: { colIndex: number; label: string }[] = [];
     let lastMonth = -1;
@@ -192,14 +195,14 @@ export default function ContributionHeatmap({ commits, title }: Props) {
         <div style={{ overflowX: "auto" }}>
           <div style={{ display: "inline-block", minWidth: "100%" }}>
             
-            {/* 月ラベル (絶対配置で位置ずれを防止) */}
+            {/* 月ラベル */}
             <div style={{ position: "relative", height: 18, marginLeft: 28, marginBottom: 4 }}>
               {monthLabels.map((m, i) => (
                 <span
                   key={i}
                   style={{
                     position: "absolute",
-                    left: m.colIndex * 16, // 12px(セル幅) + 4px(gap) = 16px
+                    left: m.colIndex * 16,
                     fontSize: 10,
                     color: "#636c76",
                   }}
@@ -210,7 +213,7 @@ export default function ContributionHeatmap({ commits, title }: Props) {
             </div>
 
             <div style={{ display: "flex", gap: 4 }}>
-              {/* 曜日ラベル (月・水・金のみ表示) */}
+              {/* 曜日ラベル */}
               <div style={{ display: "grid", gridTemplateRows: "repeat(7, 12px)", gap: 4, fontSize: 9, color: "#636c76", paddingRight: 4, textAlign: "right", userSelect: "none" }}>
                 <span></span>
                 <span>Mon</span>

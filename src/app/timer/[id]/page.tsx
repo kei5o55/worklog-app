@@ -95,10 +95,10 @@ export default function TimerPage({
     };
   }, []);
 
-  const projectSessions = useMemo(
+  /*const projectSessions = useMemo(
     () => sessions.filter((s) => s.projectId === projectId),
     [sessions, projectId]
-  );
+  );*/
 
   const projectCommits =useMemo(
     ()=>commits.filter((s)=>s.projectId===projectId),[commits,projectId]
@@ -318,12 +318,12 @@ export default function TimerPage({
     startWithProject(selectedProject.id);
   };
 
-  const getProjectCommits =async()=>{ 
+  {/*const getProjectCommits =async()=>{ 
     if(!selectedProject) return;
     const allCommit=await loadCommitsIdb();
     const projectCommits =allCommit.filter((c)=>c.projectId === selectedProject.id).sort((a,b)=>b.endedAt - a.endedAt);
     return projectCommits;
-  }
+  }*/}
  
 
   const stop = async () => {
@@ -697,7 +697,6 @@ export default function TimerPage({
                 s.endedAt
               const ms = end - s.startedAt;
 
-              const isDone = !!s.endedAt;
 
               return (
                 <li
